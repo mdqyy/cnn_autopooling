@@ -1,4 +1,4 @@
- function [out, temp] = subsample(in, ratio, operation, weights, bias) 
+ function out = subsample(in, ratio, operation, weights, bias) 
  %
  % INPUTS:
  % in - N x N input image (e.g.: 32x32 matrix)
