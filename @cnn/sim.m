@@ -42,20 +42,33 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
     
     if index_sLayer == 1
     %S-layer
-        for l=1:cnet.CLayer{k-1}.numFMaps %For all feature maps from previous layer
-            %Subsampling
-            %Reshape output matrix to 1-D vector
-            XC = reshape(cnet.CLayer{k-1}.XC,1,[]);
-            if isfield(cnet.SLayer{k}, 'SFunc')
-                cnet.SLayer{k}.SS{l} = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc);
-            else
-                cnet.SLayer{k}.SS{l} = subsample(XC{l},cnet.SLayer{k}.SRate);
+    
+        if cnet.boolSorting == 1
+            prevLayer = cnet.OLayer{k-1};
+            %Auto "subsampling" function -- multiply the subsampling
+            %regions from the OLayer by the weights of the SLayer instead
+            %of using a hardcoded function
+            XC = reshape(prevLayer.XC,1,[]); %reshape to 1-D vector
+            for l=1:prevLayer.numFMaps
+                %Pool using learned parameters WS
+                cnet.SLayer{k}.SS{l} = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,cnet.SLayer{k}.WS{l},cnet.SLayer{k}.BS{l});
+                cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l};
+                %Apply transfer function
+                cnet.SLayer{k}.XS{l} = feval(cnet.SLayer{k}.TransfFunc,cnet.SLayer{k}.YS{l});
             end
-            cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l}*cnet.SLayer{k}.WS{l}+cnet.SLayer{k}.BS{l} ;    
-            %Apply transfer function
-            cnet.SLayer{k}.XS{l} = feval(cnet.SLayer{k}.TransfFunc,cnet.SLayer{k}.YS{l});
+        else
+            prevLayer = cnet.CLayer{k-1};
+            %Reshape output matrix to 1-D vector
+            XC = reshape(prevLayer.XC,1,[]);
+            for l=1:prevLayer.numFMaps %For all feature maps from previous layer
+                %Subsampling (Weights and biases of SLayer are scalars)
+                cnet.SLayer{k}.SS{l} = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc);
+                cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l}*cnet.SLayer{k}.WS{l}+cnet.SLayer{k}.BS{l} ;    
+                %Apply transfer function
+                cnet.SLayer{k}.XS{l} = feval(cnet.SLayer{k}.TransfFunc,cnet.SLayer{k}.YS{l});
+            end
         end
-
+        
     elseif index_cLayer == 1
     %C-layer      
         YC = num2cell(zeros(cnet.CLayer{k}.numKernels,1));
