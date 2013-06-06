@@ -33,6 +33,13 @@ function cnet = cnn(numLayers,numFLayers,numInputs,InputWidth,InputHeight,numOut
 %   If it necessary to create network with first CLayer make the SLayer{1}
 %   linear
 %(c) Sirotenko Mikhail, 2009
+%
+% References
+% [1] Stochastic Pooling for Regularization of Deep Convolutional Neural
+% Networks. Zeiler and Fergus. 2013. NYU.
+%
+%
+
 
 %Create empty network
 %----User defined parameters 
@@ -80,17 +87,17 @@ cnet.mu = 0.01; %Mu coefficient for stochastic Levenberg-Marqwardt
 cnet.mu_dec = 0.1; %Mu per epoch decrease rate
 cnet.mu_inc = 10;   %Mu per epoch increase rate
 cnet.mu_max = 1.0000e+010;  %Maximum mu
-cnet.epochs = 50;    %Number of epochs
+cnet.epochs = 280;   %Number of training epochs: 280 [1]
 cnet.goal = 0.00001; %Goal RMSE value
-cnet.teta = 0.2;     %Learning rate for gradient descent
+cnet.teta = 0.01;    %Learning rate for gradient descent: 10^-2 [1]
 cnet.teta_dec = 0.3; %Teta per epoch decrease rate
 
 SFunc = 'auto'; % { 'average', 'max', 'stochastic', 'auto' }
 SRate = 2; % Default subsampling rate
 CTransfFunc = 'relu'; % Default convolutional layer activation function
-STransfFunc = 'tansig_mod'; % Default pooling layer activation function
+STransfFunc = 'relu'; % Default pooling layer activation function
 OSortFunc = 'descend'; % Default order layer sorting function: { 'descend', 'ascend' }
-FTransfFunc = 'tansig_mod'; % Default fully connected layer activation function
+FTransfFunc = 'relu'; % Default fully connected layer activation function
 
 
 %The way Hessian diagonal approximation is computed

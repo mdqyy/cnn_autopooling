@@ -26,6 +26,11 @@ cnet.SLayer{1}.YS{1} = cnet.SLayer{1}.SS{1}.*cnet.SLayer{1}.WS{1}+cnet.SLayer{1}
 %Transfer (activation,sqashing) function 
 cnet.SLayer{1}.XS{1} = feval(cnet.SLayer{1}.TransfFunc,cnet.SLayer{1}.YS{1});
 
+fprintf('Input to SLayer{1}:\n');
+disp(inp);
+fprintf('Output from SLayer{1}:\n');
+disp(cnet.SLayer{1}.XS{1});
+
 %Main layer loop
 for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
     
@@ -48,7 +53,7 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             %Auto "subsampling" function -- multiply the subsampling
             %regions from the OLayer by the weights of the SLayer instead
             %of using a hardcoded function
-            XC = reshape(prevLayer.XC,1,[]); %reshape to 1-D vector
+            XC = reshape(prevLayer.XO,1,[]); %reshape to 1-D vector
             for l=1:prevLayer.numFMaps
                 %Pool using learned parameters WS
                 cnet.SLayer{k}.SS{l} = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,cnet.SLayer{k}.WS{l},cnet.SLayer{k}.BS{l});
@@ -69,16 +74,21 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             end
         end
         
+        fprintf('Input to SLayer{%d}:\n', k);
+        disp(XC{1});
+        fprintf('Output from SLayer{%d}:\n', k);
+        disp(cnet.SLayer{k}.XS{1});
+        
     elseif index_cLayer == 1
     %C-layer      
         YC = num2cell(zeros(cnet.CLayer{k}.numKernels,1));
-    
+        
             for l=1:cnet.CLayer{k}.numKernels %For all convolutional kernels
                 % Only convolve the weights with the feature maps from the 
                 % previous layer for which the ConMap indicates a '1'
                 for m=find(cnet.CLayer{k}.ConMap(l,:))
                     %Convolute and accumulate
-                     YC{l} = YC{l}+fastFilter2(cnet.CLayer{k}.WC{l},cnet.SLayer{k-1}.XS{m},'valid')+cnet.CLayer{k}.BC{l};            
+                    YC{l} = YC{l}+fastFilter2(cnet.CLayer{k}.WC{l},cnet.SLayer{k-1}.XS{m},'valid')+cnet.CLayer{k}.BC{l};            
                 end
                 % The transfer function for C-Layers is linear
                 cnet.CLayer{k}.XC{l} = YC{l};
@@ -88,13 +98,30 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             cnet.CLayer{k}.XC = cnet.CLayer{k}.XC'; % need the outgoing in column form
          end
          %cnet.CLayer{k}.XC = cnet.CLayer{k}.YC; %For C-Layers transfer function is linear
-    
+        
+         fprintf('Input to CLayer{%d}:\n', k);
+         disp(cnet.SLayer{k-1}.XS{1});
+         fprintf('Weights of CLayer{%d}:\n', k);
+         disp(cnet.CLayer{k}.WC{1});
+         fprintf('Bias of CLayer{%d}:\n', k);
+         disp(cnet.CLayer{k}.BC{1});
+         fprintf('Output from CLayer{%d}:\n', k);
+         disp(cnet.CLayer{k}.XC{1});
+         
     elseif index_oLayer == 1
     %O-layer
         % Compute the sorted inputs, SO
         for l=1:cnet.OLayer{k}.numFMaps
             [cnet.OLayer{k}.SO{l}, cnet.OLayer{k}.OO{l}] = order(cnet.CLayer{k-1}.XC{l}, cnet.OLayer{k}.SRate, cnet.OLayer{k}.SortFunc);
+            % Weights = 1, Bias = 0 (the O-Layer only performs sorting)
+            cnet.OLayer{k}.YO{l} = cnet.OLayer{k}.SO{l};
+            cnet.OLayer{k}.XO{l} = cnet.OLayer{k}.YO{l};
         end
+        
+        fprintf('Input to OLayer{%d}:\n', k);
+        disp(cnet.CLayer{k-1}.XC{1});
+        fprintf('Output from OLayer{%d}:\n', k);
+        disp(cnet.OLayer{k}.XO{1});
     end
 end
 
@@ -103,16 +130,33 @@ end
 %become 1x1 size, so the output is not a matrix but a vector
 %This should be considered while synthesizing the neural network structure
 %Convert the cell array of single values to a vector
-XC = cell2mat(cnet.CLayer{k}.XC)';
+if cnet.boolSorting == 1
+    X_mat = cell2mat(cnet.SLayer{k}.XS);
+    XC = X_mat(:)'; % convert previous layer's outputs to a vector, 1 x N
+else
+    XC = cell2mat(cnet.CLayer{k}.XC)'; % 1 x N vector
+end
+
 for k=(cnet.numLayers-cnet.numFLayers+1):cnet.numLayers
-    %If the previous layer was C-Layer
-    if (k == cnet.numCLayers+cnet.numSLayers+1)
+    %If the previous layer was not F-Layer
+    if (k == cnet.numLayers-cnet.numFLayers+1)
         cnet.FLayer{k}.Y = XC*cnet.FLayer{k}.W+cnet.FLayer{k}.B;
         cnet.FLayer{k}.X = feval(cnet.FLayer{k}.TransfFunc,cnet.FLayer{k}.Y);
-    else
+        fprintf('Input to FLayer{%d}\n', k+1);
+        disp(XC);
+    else % previous layer was F-Layer
         cnet.FLayer{k}.Y = cnet.FLayer{k-1}.X*cnet.FLayer{k}.W+cnet.FLayer{k}.B;
         cnet.FLayer{k}.X = feval(cnet.FLayer{k}.TransfFunc,cnet.FLayer{k}.Y);
+        %fprintf('Input to FLayer{%d}\n', k+1);
+        %disp(cnet.FLayer{k-1}.X);
     end
+    
+    %fprintf('Weights of FLayer{%d}\n', k);
+    %disp(cnet.FLayer{k}.W);
+    %fprintf('Biases of FLayer{%d}\n', k);
+    %disp(cnet.FLayer{k}.B);
+    fprintf('Output from FLayer{%d}\n', k);
+    disp(cnet.FLayer{k}.X');
 end
 
 out = cnet.FLayer{k}.X;

@@ -1,6 +1,10 @@
 function out = relu(in1,in2,in3)
 %RELU Rectified linear unit transfer function. 
 % 
+% INPUTS
+% in1 - inputs to apply function (1 x N) to OR 'dn'
+% If 'dn' specified, the function returns a derivative of in3 wrt in2
+%
 % Syntax
 %
 %   A = relu(N)
@@ -23,17 +27,16 @@ else
 end
 
 function a = apply_transfer(n)
-if n > 0
     a = n;
-else
-    a = 0;
+    a(a < 0) = 0;
 end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Derivative of Y w/respect to X
 function da_dn = derivative(n,a)
-if n > 0
-    da_dn = 1;
-else
-    da_dn = 0;
+    da_dn = n;
+    da_dn(da_dn > 0) = 1;
+    da_dn(da_dn < 0) = 0;
 end
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+end

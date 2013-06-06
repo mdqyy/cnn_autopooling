@@ -28,46 +28,86 @@ cnet.FLayer{k}.dEdY{1} = cnet.FLayer{k}.dXdY{1}.*cnet.FLayer{cnet.numLayers}.dEd
 %Check if the previous layer is convolutional or fully-connected
 if(cnet.numFLayers~=1) % previous layer is fully-connected
     outp = cnet.FLayer{cnet.numLayers-1}.X;
-else % previous layer is convolutional
-    outp = cnet.CLayer{cnet.numLayers-1}.XC;        
+else % previous layer is not fully-connected
+    if cnet.boolSorting == 1
+        outp = cnet.SLayer{cnet.numLayers-1}.XS; 
+    else
+        outp = cnet.CLayer{cnet.numLayers-1}.XC;        
+    end
 end
 %Calculate gradients for weights and biases
+% "kron" = Kroneker tensor product = every possible pair of products
 cnet.FLayer{k}.dEdW{1} = kron(cnet.FLayer{k}.dEdY{1},outp)';
-cnet.FLayer{k}.dEdB{1} = cnet.FLayer{k}.dEdY{1}';
+cnet.FLayer{k}.dEdB{1} = cnet.FLayer{k}.dEdY{1}'; %biases are 1
+
+fprintf('Dim of dEdW for FLayer{%d}\n', k);
+disp(size(cnet.FLayer{k}.dEdW{1}));
+fprintf('Dim of dEdB for FLayer{%d}\n', k);
+disp(size(cnet.FLayer{k}.dEdB{1}));
+
 
 %Reshape data into single-column vector
- je=cnet.FLayer{k}.dEdW{1};
- je=[je;cnet.FLayer{k}.dEdB{1}];
+je=cnet.FLayer{k}.dEdW{1};
+je=[je;cnet.FLayer{k}.dEdB{1}];
 
+fprintf('Dim of je right after FLayer{%d}\n', k);
+disp(size(je));
+ 
 if (cnet.numFLayers>1) %If there are more than 1 fully-connected layers
     for k=cnet.numLayers-1:cnet.numLayers-cnet.numFLayers+1
         %Backpropagate error to outputs of this layer
         cnet.FLayer{k}.dEdX{1} = cnet.FLayer{k+1}.W*cnet.FLayer{k+1}.dEdY{1}';
-        %Сalculating the transfer function derivative
-        cnet.FLayer{k}.dXdY{1} = feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.FLayer{k}.Y,cnet.FLayer{k}.X)'; %Производная функции активации
+        %Calculating the transfer function derivative
+        cnet.FLayer{k}.dXdY{1} = feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.FLayer{k}.Y,cnet.FLayer{k}.X)';
         %Backpropagate error to transfer function inputs
         cnet.FLayer{k}.dEdY{1} = cnet.FLayer{k}.dXdY{1}.*cnet.FLayer{k}.dEdX{1};
-        %Check if the previous layer is convolutional or fully-connected
+        %Check if the previous layer is fully-connected or not
         if(cnet.numLayers-cnet.numFLayers+1==k)
-             outp = cell2mat(cnet.CLayer{k-1}.XC); %convolutional       
+            if cnet.boolSorting == 1
+                outp = cell2mat(cnet.SLayer{k-1}.XS); %pooling 
+                outp = outp(:);
+            else
+                outp = cell2mat(cnet.CLayer{k-1}.XC); %convolutional, Nx1
+            end
         else
              outp = cnet.FLayer{k-1}.X; %fully-connected
         end
         %Calculate gradients for weights and biases        
         cnet.FLayer{k}.dEdW{1} = kron(cnet.FLayer{k}.dEdY{1},outp); 
         cnet.FLayer{k}.dEdB{1} = cnet.FLayer{k}.dEdY{1};     
+        
+        fprintf('Dim of dEdW for FLayer{%d}\n', k);
+        disp(size(cnet.FLayer{k}.dEdW{1}));
+        fprintf('Dim of dEdB for FLayer{%d}\n', k);
+        disp(size(cnet.FLayer{k}.dEdB{1}));
 
-       %Reshape data into single-column vector
-         je=[je;cnet.FLayer{k}.dEdW{1}];
-         je=[je;cnet.FLayer{k}.dEdB{1}];    
+        %Reshape data into single-column vector
+        je=[je;cnet.FLayer{k}.dEdW{1}];
+        je=[je;cnet.FLayer{k}.dEdB{1}];   
+        
     end
 end
 
 k = cnet.numLayers-cnet.numFLayers;
-%Backpropagating the error
-cnet.CLayer{k}.dEdX = num2cell(cnet.FLayer{k+1}.W*cnet.FLayer{k+1}.dEdY{1});
-%dE/dY = dE/dX because of linear transfer function for C-layer
-cnet.CLayer{k}.dEdY = cnet.CLayer{k}.dEdX;
+%Backpropagating the error to the layer right before the F-Layers
+if cnet.boolSorting == 1
+    cnet.SLayer{k}.dEdX = num2cell(cnet.FLayer{k+1}.W*cnet.FLayer{k+1}.dEdY{1});
+    for l=1:cnet.SLayer{k}.numFMaps
+        cnet.SLayer{k}.dXdY{l} = feval(cnet.SLayer{k}.TransfFunc,'dn',cnet.SLayer{k}.YS{l},cnet.SLayer{k}.XS{l});
+    end
+    cnet.SLayer{k}.dXdY = cell2mat();
+    cnet.SLayer{k}.dEdY = cnet.SLayer{k}.dXdY .* cnet.SLayer{k}.dEdX;
+    fprintf('Dim of dEdX for SLayer{%d}\n', k);
+    disp(size(cnet.SLayer{k}.dEdX));
+    fprintf('Dim of dEdY for SLayer{%d}\n', k);
+    disp(size(cnet.SLayer{k}.dEdY));
+else
+    cnet.CLayer{k}.dEdX = num2cell(cnet.FLayer{k+1}.W*cnet.FLayer{k+1}.dEdY{1});
+    cnet.CLayer{k}.dXdY = feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.CLayer{k}.YC,cnet.CLayer{k}.XC);
+    cnet.CLayer{k}.dEdY = cnet.CLayer{k}.dXdY .* cnet.CLayer{k}.dEdX;
+    %dE/dY = dE/dX because of linear transfer function for C-layer
+    %cnet.CLayer{k}.dEdY = cnet.CLayer{k}.dEdX;
+end
 
 for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's dummy)
     if(rem(k,2)) %Parity check
