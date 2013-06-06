@@ -1,4 +1,4 @@
-function X = randp(P,vals,varargin) ;
+function [X,ix] = randp(P,vals,varargin) ;
 % RANDP - pick random values with relative probability
 %
 % INPUTS
@@ -6,6 +6,10 @@ function X = randp(P,vals,varargin) ;
 % vals - a K x N matrix, where each row are the values from which comes the
 % probability distribution
 % varargin - M,L - dimensions for the resulting sample
+%
+% OUTPUTS
+% X - sampled matrix, K x 1 (one value sampled from each of the N rows)
+% ix - indices of the sampled values, K x 1
 %
 %
 %     R = RANDP(PROB,..) returns integers in the range from 1 to
@@ -51,7 +55,8 @@ function X = randp(P,vals,varargin) ;
 error(nargchk(2,Inf,nargin)) ;
 
 try
-    X = rand(varargin{:}) ; 
+    X = rand(varargin{:}); 
+    ix = rand(varargin{:});
 catch
     E = lasterror ;
     E.message = strrep(E.message,'rand','randp') ;
@@ -68,9 +73,10 @@ for k=1:size(P,1)
         error('All probabilities should be 0 or larger.') ;
     end
     
-    if isempty(prob) || sum(prob)==0
+    if isempty(prob) || sum(prob)==0 % all values are zero
         %warning([mfilename ':ZeroProbabilities'],'All zero probabilities');
         X(k) = 0;
+        ix(k) = 1 + round(rand(1)*(size(P,2)-1)); % randomly pick one
     else
         [~,bin] = histc(X(k),[0 ; cumsum(prob(:))] ./ sum(prob)) ;
         if bin == 0
@@ -78,6 +84,7 @@ for k=1:size(P,1)
             disp(prob);
         end
         X(k) = vals(k,bin);
+        ix(k) = bin;
     end
 end
 

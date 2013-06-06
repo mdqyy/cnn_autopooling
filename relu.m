@@ -33,6 +33,8 @@ end
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% Derivative of Y w/respect to X
 function da_dn = derivative(n,a)
+    % It is common to assume the derivative at the cusp is 0 (cf.
+    % https://groups.google.com/forum/?fromgroups#!topic/theano-users/Y8lQqOzXC0A)
     da_dn = n;
     da_dn(da_dn > 0) = 1;
     da_dn(da_dn < 0) = 0;

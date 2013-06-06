@@ -135,6 +135,7 @@ if boolSorting == 1
         
         %----Input/Output and weights
         cnet.SLayer{m}.SS{1} = 0; %Subsampled inputs
+        cnet.SLayer{m}.OS{1} = 0; %Indices of the subsampled inputs
         cnet.SLayer{m}.YS{1} = 0; %Weighted inputs (SS * W + B)
         cnet.SLayer{m}.XS{1} = 0; %Outputs (after activation)
         

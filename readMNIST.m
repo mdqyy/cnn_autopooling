@@ -23,7 +23,7 @@ function [I,labels,I_test,labels_test] = readMNIST(num)
 
 %Check if we have MNIST dataset 
 
-if num == -1 % read the minimal example (1 train digit=0, 1 test digit=0)
+if num == -1 % read the minimal example (for debugging purposes)
     load test.mat;
     
 else % read from the MNIST dataset, a specified number of examples

@@ -21,7 +21,7 @@ function [out, cnet] = sim(cnet,inp)
 %Supposed that input image is preprocessed to zero mean and 1 deviation
 %Subsampling
 %if isfield(cnet.SLayer{1}, 'SFunc')
-cnet.SLayer{1}.SS{1} = subsample(inp,cnet.SLayer{1}.SRate,cnet.SLayer{1}.SFunc);
+[cnet.SLayer{1}.SS{1}, cnet.SLayer{1}.OS{1}] = subsample(inp,cnet.SLayer{1}.SRate,cnet.SLayer{1}.SFunc);
 cnet.SLayer{1}.YS{1} = cnet.SLayer{1}.SS{1}.*cnet.SLayer{1}.WS{1}+cnet.SLayer{1}.BS{1};
 %Transfer (activation,sqashing) function 
 cnet.SLayer{1}.XS{1} = feval(cnet.SLayer{1}.TransfFunc,cnet.SLayer{1}.YS{1});
@@ -56,8 +56,8 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             XC = reshape(prevLayer.XO,1,[]); %reshape to 1-D vector
             for l=1:prevLayer.numFMaps
                 %Pool using learned parameters WS
-                cnet.SLayer{k}.SS{l} = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,cnet.SLayer{k}.WS{l},cnet.SLayer{k}.BS{l});
-                cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l};
+                [cnet.SLayer{k}.SS{l}, cnet.SLayer{k}.OS{l}] = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,cnet.SLayer{k}.WS{l},cnet.SLayer{k}.BS{l});
+                cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l}; %NB: no weights here!
                 %Apply transfer function
                 cnet.SLayer{k}.XS{l} = feval(cnet.SLayer{k}.TransfFunc,cnet.SLayer{k}.YS{l});
             end
@@ -67,7 +67,7 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             XC = reshape(prevLayer.XC,1,[]);
             for l=1:prevLayer.numFMaps %For all feature maps from previous layer
                 %Subsampling (Weights and biases of SLayer are scalars)
-                cnet.SLayer{k}.SS{l} = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc);
+                [cnet.SLayer{k}.SS{l}, cnet.SLayer{k}.OS{l}] = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc);
                 cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l}*cnet.SLayer{k}.WS{l}+cnet.SLayer{k}.BS{l} ;    
                 %Apply transfer function
                 cnet.SLayer{k}.XS{l} = feval(cnet.SLayer{k}.TransfFunc,cnet.SLayer{k}.YS{l});
