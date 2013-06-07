@@ -150,7 +150,7 @@ for t=1:cnet.epochs
         %Plot mean of performance for every N patterns
         if(n>1)
                   if(~mod(n-1,200))
-                      mcr = [mcr calcMCR(cnet,I_testp, labels_test, 1:50)];
+                      mcr = [mcr calcMCR(cnet,I_testp, labels_test, 1:length(labels_test))];
                       plot(h_MCRaxes,mcr);
                       SetText(h_MCRedit,mcr(end));
                   end

@@ -210,7 +210,7 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
 
                 end
          end
-         %Storing everithing
+         %Storing everything
          cnet.SLayer{k-1}.dEdX = dEdX;
          cnet.CLayer{k}.dEdW = dEdW;
          cnet.CLayer{k}.dEdB = dEdB;
@@ -223,10 +223,50 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
         %Ordering layer
         
         % Given SLayer's dEdY, compute OLayer's derivatives
+        % TODO
         
+        %Initialize temporary variables for accumulating the gradients
+        dEdX = num2cell(zeros(1,cnet.CLayer{k-1}.numFMaps));
+        dEdW = num2cell(zeros(1,cnet.OLayer{k}.numFMaps));
+        dEdB = num2cell(zeros(1,cnet.OLayer{k}.numFMaps));
+        
+        % OLayer has no activation function -> unit derivatives
+        cnet.OLayer{k}.dEdY = cnet.OLayer{k}.dEdX;
+        
+        %Compute for every feature map
+        for l=1:cnet.OLayer{k}.numFMaps
+            
+            % OLayer has no activation function -> unit derivatives
+            cnet.OLayer{k}.dXdY{l} = ones(size(cnet.OLayer{k}.XO{l}));
+            
+            % For previous layer (CLayer). NB: dEdY = dEdSO for OLayer
+            dEdX{l} = back_order(cnet.OLayer{k}.dEdY{l},cnet.OLayer{k}.SRate,cnet.OLayer{k}.OO{l});
+            
+            % S = order(input), Y = w * S + b (scalar weights, shared), X = Y
+            dEdW{l} = sum(sum(cnet.OLayer{k}.dEdY{l}.*cnet.OLayer{k}.SO{l}));
+            dEdB{l} = sum(sum(cnet.OLayer{k}.dEdY{l}));
+        end
+        
+        %Store everything
+        fprintf('Size of dEdW{1} for OLayer{%d}\n', k);
+        disp(size(dEdW{1}));
+        fprintf('Size of dEdB{1} for OLayer{%d}\n', k);
+        disp(size(dEdB{1}));
+        fprintf('Size of dEdX{1} for CLayer{%d}\n', k-1);
+        disp(size(dEdX{1}));
+        cnet.CLayer{k-1}.dEdX = reshape(dEdX,size(cnet.CLayer{k-1}.XC,1),size(cnet.CLayer{k-1}.XC,2),1);
+        cnet.OLayer{k}.dEdW = dEdW;
+        cnet.OLayer{k}.dEdB = dEdB;
+        
+        %Reshape data into single-column vector
+        je=[je;reshape(cell2mat(cnet.OLayer{k}.dEdW),[],1)];
+        je=[je;cell2mat(cnet.OLayer{k}.dEdB)'];
     end
 end
 
-
+fprintf('Finished calcje.m, size of je:\n');
+disp(size(je));
+fprintf('Size of cnet:\n');
+disp(cnn_size(cnet));
 
 end

@@ -114,8 +114,8 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
         for l=1:cnet.OLayer{k}.numFMaps
             [cnet.OLayer{k}.SO{l}, cnet.OLayer{k}.OO{l}] = order(cnet.CLayer{k-1}.XC{l}, cnet.OLayer{k}.SRate, cnet.OLayer{k}.SortFunc);
             % Weights = 1, Bias = 0 (the O-Layer only performs sorting)
-            cnet.OLayer{k}.YO{l} = cnet.OLayer{k}.SO{l};
-            cnet.OLayer{k}.XO{l} = cnet.OLayer{k}.YO{l};
+            cnet.OLayer{k}.YO{l} = cnet.OLayer{k}.SO{l}; %NB no weights to train
+            cnet.OLayer{k}.XO{l} = cnet.OLayer{k}.YO{l}; %NB no activation function
         end
         
         fprintf('Input to OLayer{%d}:\n', k);
