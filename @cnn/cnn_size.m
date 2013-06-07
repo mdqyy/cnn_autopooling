@@ -44,9 +44,9 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %first layer is dummy
         fprintf('k=%d, size=%d\n', k, numel(cnet.CLayer{k}.WC)*numel(cnet.CLayer{k}.WC{1})+numel(cnet.CLayer{k}.BC)*numel(cnet.CLayer{k}.BC{1}));
         sz = sz + numel(cnet.CLayer{k}.WC)*numel(cnet.CLayer{k}.WC{1})+numel(cnet.CLayer{k}.BC)*numel(cnet.CLayer{k}.BC{1});
     elseif index_oLayer == 1
-        %Ordering layer
-        fprintf('k=%d, size=%d\n', k, numel(cnet.OLayer{k}.WO)*numel(cnet.OLayer{k}.WO{1})+numel(cnet.OLayer{k}.BO)*numel(cnet.OLayer{k}.BO{1}));
-        sz = sz + numel(cnet.OLayer{k}.WO)*numel(cnet.OLayer{k}.WO{1})+numel(cnet.OLayer{k}.BO)*numel(cnet.OLayer{k}.BO{1});
+        %Ordering layer - no trainable weights, only does reordering
+        fprintf('k=%d, size=%d\n', k, 0);
+        %sz = sz + numel(cnet.OLayer{k}.WO)*numel(cnet.OLayer{k}.WO{1})+numel(cnet.OLayer{k}.BO)*numel(cnet.OLayer{k}.BO{1});
     end
 end
 
