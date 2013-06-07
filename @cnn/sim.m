@@ -26,11 +26,6 @@ cnet.SLayer{1}.YS{1} = cnet.SLayer{1}.SS{1}.*cnet.SLayer{1}.WS{1}+cnet.SLayer{1}
 %Transfer (activation,sqashing) function 
 cnet.SLayer{1}.XS{1} = feval(cnet.SLayer{1}.TransfFunc,cnet.SLayer{1}.YS{1});
 
-fprintf('Input to SLayer{1}:\n');
-disp(inp);
-fprintf('Output from SLayer{1}:\n');
-disp(cnet.SLayer{1}.XS{1});
-
 %Main layer loop
 for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
     
@@ -74,11 +69,6 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             end
         end
         
-        fprintf('Input to SLayer{%d}:\n', k);
-        disp(XC{1});
-        fprintf('Output from SLayer{%d}:\n', k);
-        disp(cnet.SLayer{k}.XS{1});
-        
     elseif index_cLayer == 1
     %C-layer      
         YC = num2cell(zeros(cnet.CLayer{k}.numKernels,1));
@@ -97,16 +87,6 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
          if size(cnet.CLayer{k}.XC,1) < size(cnet.CLayer{k}.XC,2) 
             cnet.CLayer{k}.XC = cnet.CLayer{k}.XC'; % need the outgoing in column form
          end
-         %cnet.CLayer{k}.XC = cnet.CLayer{k}.YC; %For C-Layers transfer function is linear
-        
-         fprintf('Input to CLayer{%d}:\n', k);
-         disp(cnet.SLayer{k-1}.XS{1});
-         fprintf('Weights of CLayer{%d}:\n', k);
-         disp(cnet.CLayer{k}.WC{1});
-         fprintf('Bias of CLayer{%d}:\n', k);
-         disp(cnet.CLayer{k}.BC{1});
-         fprintf('Output from CLayer{%d}:\n', k);
-         disp(cnet.CLayer{k}.XC{1});
          
     elseif index_oLayer == 1
     %O-layer
@@ -117,11 +97,6 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             cnet.OLayer{k}.YO{l} = cnet.OLayer{k}.SO{l}; %NB no weights to train
             cnet.OLayer{k}.XO{l} = cnet.OLayer{k}.YO{l}; %NB no activation function
         end
-        
-        fprintf('Input to OLayer{%d}:\n', k);
-        disp(cnet.CLayer{k-1}.XC{1});
-        fprintf('Output from OLayer{%d}:\n', k);
-        disp(cnet.OLayer{k}.XO{1});
     end
 end
 
@@ -142,21 +117,10 @@ for k=(cnet.numLayers-cnet.numFLayers+1):cnet.numLayers
     if (k == cnet.numLayers-cnet.numFLayers+1)
         cnet.FLayer{k}.Y = XC*cnet.FLayer{k}.W+cnet.FLayer{k}.B;
         cnet.FLayer{k}.X = feval(cnet.FLayer{k}.TransfFunc,cnet.FLayer{k}.Y);
-        fprintf('Input to FLayer{%d}\n', k+1);
-        disp(XC);
     else % previous layer was F-Layer
         cnet.FLayer{k}.Y = cnet.FLayer{k-1}.X*cnet.FLayer{k}.W+cnet.FLayer{k}.B;
         cnet.FLayer{k}.X = feval(cnet.FLayer{k}.TransfFunc,cnet.FLayer{k}.Y);
-        %fprintf('Input to FLayer{%d}\n', k+1);
-        %disp(cnet.FLayer{k-1}.X);
     end
-    
-    %fprintf('Weights of FLayer{%d}\n', k);
-    %disp(cnet.FLayer{k}.W);
-    %fprintf('Biases of FLayer{%d}\n', k);
-    %disp(cnet.FLayer{k}.B);
-    fprintf('Output from FLayer{%d}\n', k);
-    disp(cnet.FLayer{k}.X');
 end
 
 out = cnet.FLayer{k}.X;

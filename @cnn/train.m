@@ -49,7 +49,6 @@ gamma = 0.1;
 numPats = length(Ip);
 %Calculate the size of network (the total number of weights to train)
 net_size = cnn_size(cnet);
-fprintf('Network size (# weights to train): %f\n', net_size);
 
 % net_size by net_size matrix with 1's on the diagonal, 0's elsewhere
 ii = sparse(1:net_size,1:net_size,ones(1,net_size));    
@@ -144,6 +143,7 @@ for t=1:cnet.epochs
             %Levenberg-Marquardt (combination of GD and Gauss-Newton)
             dW = (jj+cnet.mu*ii)\(cnet.teta*je);    
         end
+        
         %Apply calculated weight updates
         cnet = adapt_dw(cnet,dW);
         

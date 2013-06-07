@@ -36,7 +36,19 @@ end
 
 %Main loop
 for k=(cnet.numLayers-cnet.numFLayers):-1:2 %(all except first layer, its dummy) 
-    if(rem(k,2)) %Parity check
+    
+    index_sLayer = 0;
+    index_cLayer = 0;
+    index_oLayer = 0;
+    if (cnet.boolSorting==0 && rem(k,2)==1) || (cnet.boolSorting==1 && rem(k-1,3)==0)
+        index_sLayer = 1;
+    elseif (cnet.boolSorting==0 && rem(k,2)==0) || (cnet.boolSorting==1 && rem(k-2,3)==0)
+        index_cLayer = 1;
+    elseif (cnet.boolSorting==1 && rem(k,3)==0)
+        index_oLayer = 1;
+    end
+    
+    if index_sLayer == 1
         %S-Layer
         %Calculate total number of weights for the layer
         sz = numel(cnet.SLayer{k}.WS)*numel(cnet.SLayer{k}.WS{1});
@@ -48,9 +60,12 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %(all except first layer, its dummy)
         vVert=ones(cnet.SLayer{k}.numFMaps,1)*mH;
         vHoriz = mW;  
         %Convert cell to matrix and update weights
-        Wnew = cell2mat(cnet.SLayer{k}.WS') - reshape(dW(wPtr:(wPtr+sz-1)),cnet.SLayer{k}.numFMaps,[]);        
+        %Each column in the Wnew matrix is a set of weights for 1 FMap, the
+        %number of columns is equal to the number of FMaps for SLayer{k}
+        numWeights = cnet.SLayer{k}.SRate*cnet.SLayer{k}.SRate;
+        Wnew = cell2mat(cnet.SLayer{k}.WS') - reshape(dW(wPtr:(wPtr+sz-1)),numWeights,cnet.SLayer{k}.numFMaps);     
         %Convert back to cell array
-        cnet.SLayer{k}.WS = num2cell(Wnew)';        
+        cnet.SLayer{k}.WS = num2cell(Wnew,1)'; 
         %Increment pointer
         wPtr = wPtr+sz;
 
@@ -69,7 +84,7 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %(all except first layer, its dummy)
         cnet.SLayer{k}.BS = num2cell(Bnew)';
         %Increment pointer
         wPtr = wPtr+sz;
-    else
+    elseif index_cLayer == 1
     %C-Layer
         %Calculate total number of weights for the layer
         sz = numel(cnet.CLayer{k}.WC)*numel(cnet.CLayer{k}.WC{1});
@@ -96,10 +111,11 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %(all except first layer, its dummy)
         cnet.CLayer{k}.BC = num2cell(Bnew);
         %Increment pointer
         wPtr = wPtr+sz;
-
+    elseif index_oLayer == 1
+    %O-Layer
+        % No weights to adapt, this layer only does ordering
     end
 end
-
 
 end
 

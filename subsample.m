@@ -114,6 +114,9 @@
             % each column of 'temp' represents one 4x4 block =>
             % multiply each column by the shared weights and
             % add bias to every column, then reshape to matrix
+            %disp(size(temp));
+            %disp(size(weights));
+            %disp(size(repmat(weights(:),1,size(temp,2))));
             out = reshape( sum(temp .* repmat(weights(:),1,size(temp,2)),1) + bias, ...
                             size(in,1)/ratio, size(in,2)/ratio);
         end

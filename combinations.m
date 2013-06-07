@@ -13,9 +13,8 @@ out = nan(length(vec1)*length(vec2),2);
 
 for m=1:length(vec2)
     for k=1:length(vec1)
-        out((m-1)*combnum+k,:) = [vec1(k), vec2(m)];
+        out((m-1)*length(vec1)+k,:) = [vec1(k), vec2(m)];
     end
 end
-
 
 end

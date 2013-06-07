@@ -20,9 +20,9 @@ for i=idxs
     [out, cnet] = sim(cnet,I_testp{i});  
     
     % Display the (predicted, actual) labels
-    fprintf('Output probabilities:\n');
-    disp(out(:) ./ sum(out(:)));
-    fprintf('Predicted digit: %d, Actual digit: %d\n\n', find(out==max(out))-1, labels(i));
+    %fprintf('Output probabilities:\n');
+    %disp(out(:) ./ sum(out(:)));
+    fprintf('Predicted digit: %d, Actual digit: %d\n', find(out==max(out))-1, labels(i));
     
     % out is the output of probabilities for each class => compare the
     % index of the maximum probability class with the target label
