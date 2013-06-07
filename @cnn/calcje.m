@@ -86,6 +86,8 @@ if (cnet.numFLayers>1) %If there are more than 1 fully-connected layers
         je=[je;cnet.FLayer{k}.dEdW{1}];
         je=[je;cnet.FLayer{k}.dEdB{1}];   
         
+        fprintf('Dim of je right after FLayer{%d}\n', k);
+        disp(size(je));
     end
 end
 
@@ -153,10 +155,14 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
             cnet.SLayer{k}.dXdY{l} = feval(cnet.SLayer{k}.TransfFunc,'dn',cnet.SLayer{k}.YS{l},cnet.SLayer{k}.XS{l}); 
             %Backpropagate error to transfer function inputs
             cnet.SLayer{k}.dEdY{l} = cnet.SLayer{k}.dXdY{l}.*cnet.SLayer{k}.dEdX{l};
-            %Calculate the gradient for weights and biases 
-            % (1 shared weight per feature map, Y = w * S)
-            cnet.SLayer{k}.dEdW{l} = sum(sum(cnet.SLayer{k}.dEdY{l}.*cnet.SLayer{k}.SS{l}));     
-            cnet.SLayer{k}.dEdB{l}=sum(sum(cnet.SLayer{k}.dEdY{l}));    
+            
+            %Calculate the gradient for weights and biases
+            % (SRate*SRate shared weights per feature map, used in auto pooling function)
+            % NB: Y = S (no weights after pooling)
+            %cnet.SLayer{k}.dEdW{l} = sum(sum(cnet.SLayer{k}.dEdY{l}.*cnet.SLayer{k}.SS{l}));
+            cnet.SLayer{k}.dEdW{l} = subsample_grad(cnet.SLayer{k}.dEdY{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,cnet.OLayer{k-1}.XO{l});
+            cnet.SLayer{k}.dEdB{l}=sum(sum(cnet.SLayer{k}.dEdY{l}));
+            
             if(k>1) %Backpropagate the error if this is not the first layer
                 % For SFunc max or stochastic, need to pass in indices (SLayer.OS)
                 % For SFunc auto, need to pass in weights (SLayer.WS)
@@ -178,6 +184,9 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
         %Reshape data into single-column vector
          je=[je;cell2mat(cnet.SLayer{k}.dEdW')];
          je=[je;cell2mat(cnet.SLayer{k}.dEdB')];
+         
+        fprintf('Dim of je right after SLayer{%d}\n', k);
+        disp(size(je));
     
 %---------------------------------------------------------------------------------------------    
     elseif index_cLayer == 1
@@ -218,17 +227,18 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
          je=[je;reshape(cell2mat(cnet.CLayer{k}.dEdW),[],1)];
          je=[je;cell2mat(cnet.CLayer{k}.dEdB)'];
          
+         fprintf('Dim of je right after CLayer{%d}\n', k);
+         disp(size(je));
+        
 %---------------------------------------------------------------------------------------------  
     elseif index_oLayer == 1
         %Ordering layer
         
-        % Given SLayer's dEdY, compute OLayer's derivatives
-        % TODO
-        
+        %Given SLayer's dEdY, compute OLayer's derivatives
         %Initialize temporary variables for accumulating the gradients
         dEdX = num2cell(zeros(1,cnet.CLayer{k-1}.numFMaps));
-        dEdW = num2cell(zeros(1,cnet.OLayer{k}.numFMaps));
-        dEdB = num2cell(zeros(1,cnet.OLayer{k}.numFMaps));
+        %dEdW = num2cell(zeros(1,cnet.OLayer{k}.numFMaps));
+        %dEdB = num2cell(zeros(1,cnet.OLayer{k}.numFMaps));
         
         % OLayer has no activation function -> unit derivatives
         cnet.OLayer{k}.dEdY = cnet.OLayer{k}.dEdX;
@@ -243,24 +253,18 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
             dEdX{l} = back_order(cnet.OLayer{k}.dEdY{l},cnet.OLayer{k}.SRate,cnet.OLayer{k}.OO{l});
             
             % S = order(input), Y = w * S + b (scalar weights, shared), X = Y
-            dEdW{l} = sum(sum(cnet.OLayer{k}.dEdY{l}.*cnet.OLayer{k}.SO{l}));
-            dEdB{l} = sum(sum(cnet.OLayer{k}.dEdY{l}));
+            %dEdW{l} = sum(sum(cnet.OLayer{k}.dEdY{l}.*cnet.OLayer{k}.SO{l}));
+            %dEdB{l} = sum(sum(cnet.OLayer{k}.dEdY{l}));
         end
         
         %Store everything
-        fprintf('Size of dEdW{1} for OLayer{%d}\n', k);
-        disp(size(dEdW{1}));
-        fprintf('Size of dEdB{1} for OLayer{%d}\n', k);
-        disp(size(dEdB{1}));
         fprintf('Size of dEdX{1} for CLayer{%d}\n', k-1);
         disp(size(dEdX{1}));
         cnet.CLayer{k-1}.dEdX = reshape(dEdX,size(cnet.CLayer{k-1}.XC,1),size(cnet.CLayer{k-1}.XC,2),1);
-        cnet.OLayer{k}.dEdW = dEdW;
-        cnet.OLayer{k}.dEdB = dEdB;
         
-        %Reshape data into single-column vector
-        je=[je;reshape(cell2mat(cnet.OLayer{k}.dEdW),[],1)];
-        je=[je;cell2mat(cnet.OLayer{k}.dEdB)'];
+        % No update to je, no weights to train in OLayer
+        fprintf('Dim of je right after OLayer{%d}\n', k);
+        disp(size(je));
     end
 end
 
