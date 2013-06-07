@@ -40,7 +40,6 @@ h_TetaEdit = findobj(h_gui,'Tag','TetaEdit');
 h_AbortButton = findobj(h_gui,'Tag','AbortButton');
 
 tic;    %Fix the start time
-perf_plot = []; %Array for storing performance data
 %Coefficient, determining the running estimation of diagonal 
 %Hessian approximation leak
 gamma = 0.1;  
@@ -79,10 +78,19 @@ if(cnet.HcalcMode == 1)
     %Averaging
     jj = jj/cnet.HrecalcSamplesNum;
 end
+
+%Initialize performance variables
+mcr = nan(cnet.epochs,1);
+perf_plot = nan(cnet.epochs,1);
+
 %For all epochs
 for t=1:cnet.epochs
     SetText(h_EpEdit,t);
     SetTextHP(h_TetaEdit,cnet.teta);
+    fprintf('Epoch: %d, Learning rate: %.6f\n', t, cnet.teta);
+    
+    perf = nan(numPats,1);
+    
     %For all patterns
     for n=1:numPats
         % d=target output. Set the correct target to 1, others to -1.
@@ -144,23 +152,9 @@ for t=1:cnet.epochs
             dW = (jj+cnet.mu*ii)\(cnet.teta*je);    
         end
         
-        %Apply calculated weight updates
+        %Apply calculated weight updates (after every training datum)
         cnet = adapt_dw(cnet,dW);
         
-        %Plot mean of performance for every N patterns
-        if(n>1)
-                  if(~mod(n-1,200))
-                      mcr = [mcr calcMCR(cnet,I_testp, labels_test, 1:length(labels_test))];
-                      plot(h_MCRaxes,mcr);
-                      SetText(h_MCRedit,mcr(end));
-                  end
-                  if(~mod(n-1,10))
-                      perf_plot = [perf_plot,mean(sqrt(perf(n-10:n)))];         
-                      plot(h_RMSEaxes,perf_plot);
-                      SetText(h_RMSEedit,perf_plot(end));
-                  end
-        end
-              
         SetTrainingProgress(h_TrainPatch,h_TrainEdit,(n+(t-1)*numPats)/(numPats*cnet.epochs));
         SetText(h_ItEdit,n);
         drawnow;
@@ -169,6 +163,18 @@ for t=1:cnet.epochs
             return;
         end
     end
+    
+    %Plot performance after every epoch (pass through entire dataset)
+      %Plot misclassification rate
+      mcr(t) = calcMCR(cnet,I_testp, labels_test, 1:length(labels_test));
+      plot(h_MCRaxes,mcr);
+      SetText(h_MCRedit,mcr(end));
+      %Plot the mean of the root of the MSE's for all training examples
+      perf_plot(t) = mean(sqrt(perf));
+      plot(h_RMSEaxes,perf_plot);
+      SetText(h_RMSEedit,perf_plot(end));
+
+    %Update learning rate
     cnet.teta = cnet.teta*cnet.teta_dec;
 end
 toc

@@ -63,9 +63,17 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %(all except first layer, its dummy)
         %Each column in the Wnew matrix is a set of weights for 1 FMap, the
         %number of columns is equal to the number of FMaps for SLayer{k}
         numWeights = cnet.SLayer{k}.SRate*cnet.SLayer{k}.SRate;
-        Wnew = cell2mat(cnet.SLayer{k}.WS') - reshape(dW(wPtr:(wPtr+sz-1)),numWeights,cnet.SLayer{k}.numFMaps);     
+        %fprintf('k=%d\n',k);
+        %disp(size(cnet.SLayer{k}.WS));
+        %disp(size(cnet.SLayer{k}.WS{1}));
+        %disp(size(cell2mat(cnet.SLayer{k}.WS)));
+        %disp(size(dW(wPtr:(wPtr+sz-1))));
+        %disp(numWeights);
+        %disp(cnet.SLayer{k}.numFMaps);
+        %disp(size(reshape(dW(wPtr:(wPtr+sz-1)),numWeights,cnet.SLayer{k}.numFMaps)));
+        Wnew = cell2mat(cnet.SLayer{k}.WS) - reshape(dW(wPtr:(wPtr+sz-1)),numWeights,cnet.SLayer{k}.numFMaps);     
         %Convert back to cell array
-        cnet.SLayer{k}.WS = num2cell(Wnew,1)'; 
+        cnet.SLayer{k}.WS = num2cell(Wnew,1);
         %Increment pointer
         wPtr = wPtr+sz;
 

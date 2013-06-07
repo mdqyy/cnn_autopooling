@@ -33,71 +33,186 @@ clear classes;
 padding = 4;
 
 %% Architecture
-%Total number of layers
-numLayers = 6;  
-%Number of fully-connected layers
-numFLayers = 2;
-%Number of input images (simultaneously processed). Need for future
-%releases, now only 1 is possible
-numInputs = 1; 
-%Image width
-InputWidth = size(I{1},2)+padding; 
-%Image height
-InputHeight = size(I{1},1)+padding;
-%Number of outputs
-numOutputs = 10;
-%Whether to use ordered pooling layers (1) or not (0)
+
 boolSorting = 1;
-%Create an empty convolutional neural network with defined structure
-sinet = cnn(numLayers,numFLayers,numInputs,InputWidth,InputHeight,numOutputs,boolSorting);
 
-%Now define the network parameters
+if boolSorting == 1 % the new alternating C-O-S layer architecture
 
+    %Total number of layers
+    numLayers = 6;  
+    %Number of fully-connected layers
+    numFLayers = 2;
+    %Number of input images (simultaneously processed). Need for future
+    %releases, now only 1 is possible
+    numInputs = 1; 
+    %Image width
+    InputWidth = size(I{1},2)+padding; 
+    %Image height
+    InputHeight = size(I{1},1)+padding;
+    %Number of outputs
+    numOutputs = 10;
+    %Whether to use ordered pooling layers (1) or not (0)
+    boolSorting = 1;
+    %Create an empty convolutional neural network with defined structure
+    sinet = cnn(numLayers,numFLayers,numInputs,InputWidth,InputHeight,numOutputs,boolSorting);
 
-%SLayer{1} - Due to implementation specifics layers are always in pairs. First must be
-%subsampling and last (before fully connected) is convolutional layer.
-%That's why here first layer is dummy.
-sinet.SLayer{1}.SRate = 1;
-sinet.SLayer{1}.WS{1} = ones(size(sinet.SLayer{1}.WS{1}));
-sinet.SLayer{1}.BS{1} = zeros(size(sinet.SLayer{1}.BS{1}));
-sinet.SLayer{1}.TransfFunc = 'purelin';
-%Weights 1
-%Biases 1
-
-
-%CLayer{2} - Second layer - 1 convolution kernels of 28x28 size with 5x5 receptive field
-sinet.CLayer{2}.numKernels = 1;
-sinet.CLayer{2}.KernWidth = 5;
-sinet.CLayer{2}.KernHeight = 5;
-%NB: weights are shared among all units in a kernel (feature map)
-%Weights 25 (each unit connected to 25 inputs => 25*1 = 25)
-%Biases 1 (each unit is also connected to a bias => 1*1 = 1)
-% Stride of 1 is assumed
+    %Now define the network parameters
 
 
-%OLayer{3} - Third layer - 1 feature maps of 14x14 size connected to 2x2 regions
-%Subsampling rate
-sinet.OLayer{3}.SortFunc = 'descend';
-sinet.OLayer{3}.SRate = 2;
-%Weights 1 (each unit connected to 4 inputs mult by a single weight => 1*1=1)
-%Biases 1 (each unit also connected to a bias => 1*1=1)
+    %SLayer{1} - Due to implementation specifics layers are always in pairs. First must be
+    %subsampling and last (before fully connected) is convolutional layer.
+    %That's why here first layer is dummy.
+    sinet.SLayer{1}.SRate = 1;
+    sinet.SLayer{1}.WS{1} = ones(size(sinet.SLayer{1}.WS{1}));
+    sinet.SLayer{1}.BS{1} = zeros(size(sinet.SLayer{1}.BS{1}));
+    sinet.SLayer{1}.TransfFunc = 'purelin';
+    %Weights 1
+    %Biases 1
 
 
-%SLayer{4} - Fourth layer - 1 feature map of 27x27 suze connected to 2x2 regions
-%Subsampling rate
-sinet.SLayer{4}.SRate = 2;
-%Weights 4 (1*2x2 = 4)
-%Biases 1 (1*1 = 1)
+    %CLayer{2} - Second layer - 1 convolution kernels of 28x28 size with 5x5 receptive field
+    sinet.CLayer{2}.numKernels = 1;
+    sinet.CLayer{2}.KernWidth = 5;
+    sinet.CLayer{2}.KernHeight = 5;
+    %NB: weights are shared among all units in a kernel (feature map)
+    %Weights 25 (each unit connected to 25 inputs => 25*1 = 25)
+    %Biases 1 (each unit is also connected to a bias => 1*1 = 1)
+    % Stride of 1 is assumed
 
-%FLayer{5} - Fifth layer - fully connected, 120 neurons
-sinet.FLayer{5}.numNeurons = 120;
-%Weights 87480 (120x27x27 = 87480)
-%Biases 120 (120x1 = 120)
 
-%FLayer{6} - Sixth layer - fully connected, 10 output neurons
-sinet.FLayer{6}.numNeurons = numOutputs;
-%Weights 1200 (10*120 = 1200)
-%Biases 10 (10*1 = 10)
+    %OLayer{3} - Third layer - 1 feature maps of 14x14 size connected to 2x2 regions
+    %Subsampling rate
+    sinet.OLayer{3}.SortFunc = 'descend';
+    sinet.OLayer{3}.SRate = 2;
+    %Weights 1 (each unit connected to 4 inputs mult by a single weight => 1*1=1)
+    %Biases 1 (each unit also connected to a bias => 1*1=1)
+
+
+    %SLayer{4} - Fourth layer - 1 feature map of 27x27 suze connected to 2x2 regions
+    %Subsampling rate
+    sinet.SLayer{4}.SRate = 2;
+    %Weights 4 (1*2x2 = 4)
+    %Biases 1 (1*1 = 1)
+
+    %FLayer{5} - Fifth layer - fully connected, 120 neurons
+    sinet.FLayer{5}.numNeurons = 120;
+    %Weights 87480 (120x27x27 = 87480)
+    %Biases 120 (120x1 = 120)
+
+    %FLayer{6} - Sixth layer - fully connected, 10 output neurons
+    sinet.FLayer{6}.numNeurons = numOutputs;
+    %Weights 1200 (10*120 = 1200)
+    %Biases 10 (10*1 = 10)
+    
+    % Display the important parameters
+    fprintf('Convnet convolution layer transfer function: %s\n', sinet.CLayer{2}.TransfFunc);
+    fprintf('Convnet pooling layer transfer function: %s\n', sinet.SLayer{4}.TransfFunc);
+    fprintf('Convnet pooling layer subsampling function: %s\n', sinet.SLayer{4}.SFunc);
+    fprintf('Convnet fully connected layer transfer function: %s\n', sinet.FLayer{6}.TransfFunc);
+    fprintf('\n');
+    
+else % standard alternating C-S architecture
+    %Define the structure according to [2]
+    %Total number of layers
+    numLayers = 8; 
+    %Number of subsampling layers
+    numSLayers = 3; 
+    %Number of convolutional layers
+    numCLayers = 3; 
+    %Number of fully-connected layers
+    numFLayers = 2;
+    %Number of input images (simultaneously processed). Need for future
+    %releases, now only 1 is possible
+    numInputs = 1; 
+    %Image width
+    InputWidth = size(I{1},2)+padding; 
+    %Image height
+    InputHeight = size(I{1},1)+padding;
+    %Number of outputs
+    numOutputs = 10; 
+    %Create an empty convolutional neural network with deined structure
+    sinet = cnn(numLayers,numFLayers,numInputs,InputWidth,InputHeight,numOutputs,boolSorting);
+
+    %Now define the network parameters
+
+
+    %Due to implementation specifics layers are always in pairs. First must be
+    %subsampling and last (before fulli connected) is convolutional layer.
+    %That's why here first layer is dummy.
+    sinet.SLayer{1}.SRate = 1;
+    sinet.SLayer{1}.WS{1} = ones(size(sinet.SLayer{1}.WS{1}));
+    sinet.SLayer{1}.BS{1} = zeros(size(sinet.SLayer{1}.BS{1}));
+    sinet.SLayer{1}.TransfFunc = 'purelin';
+    %Weights 1
+    %Biases 1
+
+
+    %Second layer - 6 convolution kernels with 5x5 size 
+    sinet.CLayer{2}.numKernels = 6;
+    sinet.CLayer{2}.KernWidth = 5;
+    sinet.CLayer{2}.KernHeight = 5;
+    %Weights 150
+    %Biases 6
+
+    %Third layer
+    %Subsampling rate
+    sinet.SLayer{3}.SRate = 2;
+    %Weights 6
+    %Biases 6
+
+    %Forth layer - 16 kernels with 5x5 size 
+    sinet.CLayer{4}.numKernels = 16;
+    sinet.CLayer{4}.KernWidth = 5;
+    sinet.CLayer{4}.KernHeight = 5;
+    %Weights 150
+    %Biases 6
+
+    %Fifth layer
+    %Subsampling rate
+    sinet.SLayer{5}.SRate = 2;
+    %Weights 6
+    %Biases 6
+
+    %Sixth layer - outputs 120 feature maps 1x1 size
+    sinet.CLayer{6}.numKernels = 120;
+    sinet.CLayer{6}.KernWidth = 5;
+    sinet.CLayer{6}.KernHeight = 5;
+    %Weights 3000
+    %Смещений 120
+
+    %Seventh layer - fully connected, 84 neurons
+    sinet.FLayer{7}.numNeurons = 84;
+    %Weights 10080
+    %Biases 84
+
+    %Eight layer - fully connected, 10 output neurons
+    sinet.FLayer{8}.numNeurons = 10;
+    %Weights 840
+    %Biases 10
+
+    %Initialize the network
+    sinet = init(sinet);
+
+    %According to [2] the generalisation is better if there's unsimmetry in
+    %layers connections. Yann LeCun uses this kind of connection map:
+    sinet.CLayer{4}.ConMap = ...
+    [1 0 0 0 1 1 1 0 0 1 1 1 1 0 1 1;
+     1 1 0 0 0 1 1 1 0 0 1 1 1 1 0 1;
+     1 1 1 0 0 0 1 1 1 0 0 1 0 1 1 1;
+     0 1 1 1 0 0 1 1 1 1 0 0 1 0 1 1;
+     0 0 1 1 1 0 0 1 1 1 1 0 1 1 0 1; 
+     0 0 0 1 1 1 0 0 1 1 1 1 0 1 1 1; 
+    ]';
+    %but some papers proposes to randomly generate the connection map. So you
+    %can try it:
+    %sinet.CLayer{6}.ConMap = round(rand(size(sinet.CLayer{6}.ConMap))-0.1);
+    sinet.SLayer{1}.WS{1} = ones(size(sinet.SLayer{1}.WS{1}));
+    sinet.SLayer{1}.BS{1} = zeros(size(sinet.SLayer{1}.BS{1}));
+    %In my impementation output layer is ordinary tansig layer as opposed to
+    %[1,2], but I plan to implement the radial basis output layer
+
+    %sinet.FLayer{8}.TransfFunc = 'radbas';
+end
 
 %Initialize the network
 sinet = init(sinet);
@@ -106,7 +221,7 @@ sinet = init(sinet);
 %%
 %Now the final preparations
 %Number of epochs
-sinet.epochs = 10;
+sinet.epochs = 5;
 %Mu coefficient for stochastic Levenberg-Markquardt
 sinet.mu = 0.001;
 %Training coefficient (learning rate)
@@ -120,8 +235,9 @@ sinet.HcalcMode = 2;
 sinet.Hrecalc = 300; %Number of iterations to pass for Hessian recalculation
 sinet.HrecalcSamplesNum = 50; %Number of samples for Hessian recalculation
 
-%Teta decrease coefficient
-sinet.teta_dec = 0.0;
+%Teta decrease coefficient (learning rate multiplied by this decrement 
+% coefficient on every epoch)
+sinet.teta_dec = 1; 
 
 %Images preprocessing. Resulting images have 0 mean and 1 standard
 %deviation, and are padded by 4 pixels on all sides => 32x32
@@ -132,14 +248,6 @@ sinet.teta_dec = 0.0;
 %I_testp = I_test;
 %labtrn = labels;
 %labtst = labels_test;
-
-
-% Display the important parameters
-fprintf('Convnet convolution layer transfer function: %s\n', sinet.CLayer{2}.TransfFunc);
-fprintf('Convnet pooling layer transfer function: %s\n', sinet.SLayer{4}.TransfFunc);
-fprintf('Convnet pooling layer subsampling function: %s\n', sinet.SLayer{4}.SFunc);
-fprintf('Convnet fully connected layer transfer function: %s\n', sinet.FLayer{6}.TransfFunc);
-fprintf('\n');
 
 % Try one forward pass first
 [mcr,sinet]=calcMCR(sinet,Ip, labels, 1:length(labels));

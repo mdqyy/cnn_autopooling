@@ -92,7 +92,7 @@ cnet.goal = 0.00001; %Goal RMSE value
 cnet.teta = 0.01;    %Learning rate for gradient descent: 10^-2 [1]
 cnet.teta_dec = 0.3; %Teta per epoch decrease rate
 
-SFunc = 'auto'; % { 'average', 'max', 'stochastic', 'auto' }
+SFunc = 'max'; % { 'average', 'max', 'stochastic', 'auto' }
 SRate = 2; % Default subsampling rate
 CTransfFunc = 'relu'; % Default convolutional layer activation function
 STransfFunc = 'relu'; % Default pooling layer activation function

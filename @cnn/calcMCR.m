@@ -22,7 +22,7 @@ for i=idxs
     % Display the (predicted, actual) labels
     %fprintf('Output probabilities:\n');
     %disp(out(:) ./ sum(out(:)));
-    fprintf('Predicted digit: %d, Actual digit: %d\n', find(out==max(out))-1, labels(i));
+    %fprintf('Predicted digit: %d, Actual digit: %d\n', find(out==max(out))-1, labels(i));
     
     % out is the output of probabilities for each class => compare the
     % index of the maximum probability class with the target label

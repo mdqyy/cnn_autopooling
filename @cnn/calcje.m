@@ -87,9 +87,10 @@ if cnet.boolSorting == 1
 else
     cnet.CLayer{k}.dEdX = num2cell(cnet.FLayer{k+1}.W*cnet.FLayer{k+1}.dEdY{1});
     for l=1:cnet.CLayer{k}.numFMaps
-        cnet.CLayer{k}.dXdY{l,1} = feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.CLayer{k}.YC{l},cnet.CLayer{k}.XC{l});
+        cnet.CLayer{k}.dXdY{l,1} = feval(cnet.CLayer{k}.TransfFunc,'dn',cnet.CLayer{k}.YC{l},cnet.CLayer{k}.XC{l});
+        cnet.CLayer{k}.dEdY{l,1} = cnet.CLayer{k}.dXdY{l} .* cnet.CLayer{k}.dEdX{l};
     end
-    cnet.CLayer{k}.dEdY = cnet.CLayer{k}.dXdY .* cnet.CLayer{k}.dEdX;
+    %cnet.CLayer{k}.dEdY = cnet.CLayer{k}.dXdY .* cnet.CLayer{k}.dEdX;
 end
 
 for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's a dummy)
@@ -123,7 +124,12 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
             % (SRate*SRate shared weights per feature map, used in auto pooling function)
             % NB: Y = S (no weights after pooling)
             %cnet.SLayer{k}.dEdW{l} = sum(sum(cnet.SLayer{k}.dEdY{l}.*cnet.SLayer{k}.SS{l}));
-            cnet.SLayer{k}.dEdW{l} = subsample_grad(cnet.SLayer{k}.dEdY{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,cnet.OLayer{k-1}.XO{l});
+            if cnet.boolSorting == 1
+                inp = cnet.OLayer{k-1}.XO{l};
+            else
+                inp = cnet.CLayer{k-1}.XC{l};
+            end
+            cnet.SLayer{k}.dEdW{l} = subsample_grad(cnet.SLayer{k}.dEdY{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,inp);
             cnet.SLayer{k}.dEdB{l}=sum(sum(cnet.SLayer{k}.dEdY{l}));
             
             if(k>1) %Backpropagate the error if this is not the first layer

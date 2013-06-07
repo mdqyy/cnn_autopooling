@@ -61,11 +61,17 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
             %Reshape output matrix to 1-D vector
             XC = reshape(prevLayer.XC,1,[]);
             for l=1:prevLayer.numFMaps %For all feature maps from previous layer
-                %Subsampling (Weights and biases of SLayer are scalars)
-                [cnet.SLayer{k}.SS{l}, cnet.SLayer{k}.OS{l}] = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc);
-                cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l}*cnet.SLayer{k}.WS{l}+cnet.SLayer{k}.BS{l} ;    
+                %Pool using learned parameters WS
+                [cnet.SLayer{k}.SS{l}, cnet.SLayer{k}.OS{l}] = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc,cnet.SLayer{k}.WS{l},cnet.SLayer{k}.BS{l});
+                cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l}; %NB: no weights here!
                 %Apply transfer function
                 cnet.SLayer{k}.XS{l} = feval(cnet.SLayer{k}.TransfFunc,cnet.SLayer{k}.YS{l});
+                
+                %%Subsampling (Weights and biases of SLayer are scalars)
+                %[cnet.SLayer{k}.SS{l}, cnet.SLayer{k}.OS{l}] = subsample(XC{l},cnet.SLayer{k}.SRate,cnet.SLayer{k}.SFunc);
+                %cnet.SLayer{k}.YS{l} = cnet.SLayer{k}.SS{l}*cnet.SLayer{k}.WS{l}+cnet.SLayer{k}.BS{l} ;    
+                %%Apply transfer function
+                %cnet.SLayer{k}.XS{l} = feval(cnet.SLayer{k}.TransfFunc,cnet.SLayer{k}.YS{l});
             end
         end
         

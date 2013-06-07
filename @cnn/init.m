@@ -68,7 +68,7 @@ for k=2:(cnet.numLayers-cnet.numFLayers)
             else
                 %Need a single weight per feature map (shared among all
                 %pooling units and for all pooled units)
-                cnet.SLayer{k}.WS{l}= 1;
+                cnet.SLayer{k}.WS{l}= ones(r*r,1);
                 cnet.SLayer{k}.BS{l} = rand_std(1, 1, 1);
             end
         end
