@@ -38,7 +38,7 @@
      % Only need to compute grad if the pooling function is learned
      % automatically with parameters 'weights'
      if strcmp(operation, 'auto') == 1
-
+    
         % Every row of temp represents the indices of 1 ratio x ratio block
         temp = nan(size(e,1)*size(e,2),ratio*ratio);
         for k=1:ratio

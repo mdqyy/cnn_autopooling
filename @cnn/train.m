@@ -139,7 +139,7 @@ for t=1:cnet.epochs
         perf(n) = mse(e); %Store the error
         
         if(cnet.HcalcMode == 2) %Gradient descent
-            dW = cnet.teta*je;
+            dW = cnet.teta*je;  %Teta is the learning rate
         else
             %Levenberg-Marquardt (combination of GD and Gauss-Newton)
             dW = (jj+cnet.mu*ii)\(cnet.teta*je);    

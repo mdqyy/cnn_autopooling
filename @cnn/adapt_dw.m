@@ -24,7 +24,7 @@ for k=cnet.numLayers:-1:(cnet.numLayers-cnet.numFLayers+1)
     cnet.FLayer{k}.W = cnet.FLayer{k}.W-reshape(dW(wPtr:(wPtr+sz-1)),size(cnet.FLayer{k}.W));
     %Increment pointer
     wPtr = wPtr+sz;
-
+    
     %Calculate total number of biases for the layer
     sz = numel(cnet.FLayer{k}.B);
     %Update biases
