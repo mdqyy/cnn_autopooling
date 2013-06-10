@@ -92,12 +92,13 @@ cnet.goal = 0.00001; %Goal RMSE value
 cnet.teta = 0.01;    %Learning rate for gradient descent: 10^-2 [1]
 cnet.teta_dec = 0.3; %Teta per epoch decrease rate
 
-SFunc = 'auto'; % { 'average', 'max', 'stochastic', 'auto' }
-SRate = 2; % Default subsampling rate
-CTransfFunc = 'sigmoid'; % Default convolutional layer activation function
-STransfFunc = 'sigmoid'; % Default pooling layer activation function
-OSortFunc = 'descend'; % Default order layer sorting function: { 'descend', 'ascend' }
-FTransfFunc = 'sigmoid'; % Default fully connected layer activation function
+cnet.SFunc = 'auto'; % { 'average', 'max', 'stochastic', 'auto' }
+cnet.SRate = 2; % Default subsampling rate
+cnet.CTransfFunc = 'sigmoid'; % Default convolutional layer activation function
+cnet.STransfFunc = 'sigmoid'; % Default pooling layer activation function
+cnet.OSortFunc = 'descend'; % Default order layer sorting function: { 'descend', 'ascend', 'percentile' }
+cnet.OSortPerc = nan; % either 1 x M vector of percentiles, or NaN
+cnet.FTransfFunc = 'sigmoid'; % Default fully connected layer activation function
 
 
 %The way Hessian diagonal approximation is computed
@@ -126,12 +127,12 @@ if boolSorting == 1
             cnet.SLayer{m}.SRate = 1; %Input layer - no subsampling
             cnet.SLayer{m}.SFunc = 'purelin';
         else
-            cnet.SLayer{m}.SRate = SRate; %Subsampling rate
-            cnet.SLayer{m}.SFunc = SFunc; %Subsampling function
+            cnet.SLayer{m}.SRate = cnet.SRate; %Subsampling rate
+            cnet.SLayer{m}.SFunc = cnet.SFunc; %Subsampling function
         end
         
         cnet.SLayer{m}.teta = cnet.teta; %Layer train coefficient
-        cnet.SLayer{m}.TransfFunc = STransfFunc; %Activation function
+        cnet.SLayer{m}.TransfFunc = cnet.STransfFunc; %Activation function
         
         %----Input/Output and weights
         cnet.SLayer{m}.SS{1} = 0; %Subsampled inputs
@@ -169,7 +170,7 @@ if boolSorting == 1
         cnet.CLayer{m}.numKernels = 1; %Number of convolutional kernels (feature maps)
         cnet.CLayer{m}.KernWidth = 3; %Size of the feature map local receptive field (e.g. 3x3 areas in the original image)
         cnet.CLayer{m}.KernHeight = 3 ;
-        cnet.CLayer{m}.TransfFunc = CTransfFunc; %Activation function
+        cnet.CLayer{m}.TransfFunc = cnet.CTransfFunc; %Activation function
         %----Feature maps, calculating while simulation of network
         cnet.CLayer{m}.YC = cell(1); 
         cnet.CLayer{m}.XC = cell(1); 
@@ -201,8 +202,9 @@ if boolSorting == 1
         m = 3*(k-1)+3;
         
         %----User defined parameters
-        cnet.OLayer{m}.SortFunc = OSortFunc; %Ordering function: { 'descend', 'ascend' }
-        cnet.OLayer{m}.SRate = SRate;
+        cnet.OLayer{m}.SortFunc = cnet.OSortFunc; %Ordering function
+        cnet.OLayer{m}.SortPerc = cnet.OSortPerc; %Percentiles to keep (or NaN)
+        cnet.OLayer{m}.SRate = cnet.SRate;
         %----Feature maps
         cnet.OLayer{m}.SO{1} = 0; %Sorted inputs
         cnet.OLayer{m}.OO{1} = 0; %Order (need to keep indices for backprop)
@@ -236,9 +238,9 @@ else
         m=2*k-1; %Use m to consider layer parity
         %----User defined parameters
         cnet.SLayer{m}.teta = cnet.teta; %Layer train coefficient
-        cnet.SLayer{m}.SRate = SRate; %Subsampling rate
-        cnet.SLayer{m}.SFunc = SFunc; %Subsampling function
-        cnet.SLayer{m}.TransfFunc = STransfFunc; %Activation function
+        cnet.SLayer{m}.SRate = cnet.SRate; %Subsampling rate
+        cnet.SLayer{m}.SFunc = cnet.SFunc; %Subsampling function
+        cnet.SLayer{m}.TransfFunc = cnet.STransfFunc; %Activation function
         %----Feature maps, calculating while simulation of network
         cnet.SLayer{m}.YS{1} = 0; %Weighted inputs (before activation function)
         cnet.SLayer{m}.XS{1} = 0; %Outputs (after activation)
@@ -269,7 +271,7 @@ else
         cnet.CLayer{m}.numKernels = 1; %Number of convolutional kernels (feature maps)
         cnet.CLayer{m}.KernWidth = 3; %Size of the feature map local receptive field (e.g. 3x3 areas in the original image)
         cnet.CLayer{m}.KernHeight = 3 ;
-        cnet.CLayer{m}.TransfFunc = CTransfFunc; %Activation function
+        cnet.CLayer{m}.TransfFunc = cnet.CTransfFunc; %Activation function
         %----Feature maps, calculating while simulation of network
         cnet.CLayer{m}.YC = cell(1); 
         cnet.CLayer{m}.XC = cell(1); 
@@ -311,7 +313,7 @@ for k=cnet.numLayers-cnet.numFLayers+1:cnet.numLayers
     cnet.FLayer{k}.Y = 0; 
     cnet.FLayer{k}.X = 0; 
     cnet.FLayer{k}.ln = k;
-    cnet.FLayer{k}.TransfFunc = FTransfFunc; 
+    cnet.FLayer{k}.TransfFunc = cnet.FTransfFunc; 
     %----Variables calculated while training
     cnet.FLayer{k}.dEdW{1} = 0; 
     cnet.FLayer{k}.dEdB{1} = 0; 

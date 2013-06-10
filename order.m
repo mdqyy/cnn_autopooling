@@ -6,12 +6,14 @@ function [out, indices] = order(in, ratio, operation)
 % in - the input data
 % ratio - integer, representing the side length of the region to process
 % operation - string, representing the type of ordering operation.
-% { 'descend', 'ascend' }. By default, sorting is done column-wise, e.g.:
+% { 'descend', 'ascend', 'percentile' }. By default, sorting is done column-wise, e.g.:
 %
 % in
 % [ 3   6   1;
 %   2   2   9;
 %   8   4   5]
+%
+% operation = 'descend'
 %
 % out
 % [ 6   2   9   2;
@@ -37,13 +39,20 @@ if nargin < 3
 end
 
 % The size of the output
-out = nan((size(in,1)-ratio+1)*2,(size(in,2)-ratio+1)*2);
-indices = nan((size(in,1)-ratio+1)*2,(size(in,2)-ratio+1)*2);
+if strcmp(operation,'descend') == 1 || strcmp(operation,'ascend') == 1
+    sizeBlock = [ratio, ratio]; % only reordering without losing any data
+elseif strcmp(operation,'percentile') == 1
+    sizeBlock = [3, 1]; % 3 percentiles: 10th, 50th, 90th
+    perc = [90 50 10];
+end
+
+out = nan((size(in,1)-ratio+1)*sizeBlock(1),(size(in,2)-ratio+1)*sizeBlock(2));
+indices = nan((size(in,1)-ratio+1)*sizeBlock(1),(size(in,2)-ratio+1)*sizeBlock(2));
 
 % Assuming a stride of 1
 for k=1:size(in,1)-ratio+1
     for m=1:size(in,2)-ratio+1
-        % Sort the next region
+        % Extract the next region from the original data matrix
         nextRegion = in(k:k+ratio-1,m:m+ratio-1);
         
         % Compute the linear indices of the elements in nextRegion in the
@@ -51,11 +60,18 @@ for k=1:size(in,1)-ratio+1
         combos = combinations(k:k+ratio-1,m:m+ratio-1,2);
         linind = sort( sub2ind(size(in), combos(:,1), combos(:,2) )); % col-wise
         
-        % ix are the indices within nextRegion => convert to indices within
-        % the input matrix by subscripting "linind"
-        [sortedRegion, ix] = sort(nextRegion(:), operation);
-        indices((k-1)*ratio+1:k*ratio,(m-1)*ratio+1:m*ratio) = reshape(linind(ix),ratio,ratio);
-        out((k-1)*ratio+1:k*ratio,(m-1)*ratio+1:m*ratio) = reshape(sortedRegion,ratio,ratio);
+        if strcmp(operation,'descend') == 1 || strcmp(operation,'ascend') == 1
+            % ix are the indices within nextRegion => convert to indices within
+            % the input matrix by subscripting "linind"
+            [sortedRegion, ix] = sort(nextRegion(:), operation);
+            indices((k-1)*sizeBlock(1)+1:k*sizeBlock(1),(m-1)*sizeBlock(2)+1:m*sizeBlock(2)) = reshape(linind(ix),sizeBlock(1),sizeBlock(2));
+            out((k-1)*sizeBlock(1)+1:k*sizeBlock(1),(m-1)*sizeBlock(2)+1:m*sizeBlock(2)) = reshape(sortedRegion,sizeBlock(1),sizeBlock(2));
+        else
+            % Obtain percentiles
+            [percentiles,ix] = percentile(nextRegion(:), perc); % 3 x 1
+            out((k-1)*sizeBlock(1)+1:k*sizeBlock(1),(m-1)*sizeBlock(2)+1:m*sizeBlock(2)) = percentiles;
+            indices((k-1)*sizeBlock(1)+1:k*sizeBlock(1),(m-1)*sizeBlock(2)+1:m*sizeBlock(2)) = reshape(linind(ix),sizeBlock(1),sizeBlock(2));
+        end
     end
 end        
 

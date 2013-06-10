@@ -206,7 +206,7 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %Exclude first layer from loop (it's
             cnet.OLayer{k}.dXdY{l} = ones(size(cnet.OLayer{k}.XO{l}));
             
             % For previous layer (CLayer). NB: dEdY = dEdSO for OLayer
-            dEdX{l} = back_order(cnet.OLayer{k}.dEdY{l},cnet.OLayer{k}.SRate,cnet.OLayer{k}.OO{l});
+            dEdX{l} = back_order(cnet.OLayer{k}.dEdY{l},cnet.OLayer{k}.SRate,cnet.OLayer{k}.OO{l},cnet.OLayer{k}.SortPerc);
         end
         
         %Store everything

@@ -24,66 +24,38 @@ if nargin < 3
     operation = 'average'; % default operation
 end
 
-    switch ratio
-        case 4
-            if strcmp(operation, 'average') == 1
-                out = 0;
-                for k=1:4
-                    for l=1:4
-                        out(1+(k-1):4:size(e,1)*4,1+(l-1):4:size(e,2)*4) = e;
-                    end
-                end
-                out = out.*0.0625;
-            elseif strcmp(operation, 'max') == 1 || strcmp(operation, 'stochastic') == 1
-                % SS = max(x1, ..., xN) where N = ratio*ratio
-                % Only the max element (the one at the index specified in
-                % "indices") will get propagated, the rest are zero
-                out = zeros(ratio*size(e));
-                out(indices) = e;
-                
-            elseif strcmp(operation, 'auto') == 1
-                % SS = X * weights + bias
-                % dEdX = dEdS * weights
-                out = zeros(ratio*size(e));
-                for k=1:4
-                    for l=1:4
-                        out(1+(k-1):4:size(e,1)*4,1+(l-1):4:size(e,2)*4) = e * weights(k,l);
-                    end
-                end
+if ratio == 1
+    out = e;
+else
+    if strcmp(operation, 'average') == 1
+        
+        out = 0;
+        for k=1:ratio
+            for l=1:ratio
+                out(1+(k-1):ratio:size(e,1)*ratio,1+(l-1):ratio:size(e,2)*ratio) = e;
             end
-
-        case 2
-            if strcmp(operation, 'average') == 1
-                out(1:2:size(e,1)*2,1:2:size(e,2)*2)=e;
-                out(1:2:size(e,1)*2,2:2:size(e,2)*2)=e;
-                out(2:2:size(e,1)*2,1:2:size(e,2)*2)=e;
-                out(2:2:size(e,1)*2,2:2:size(e,2)*2)=e;
-                out=out.*0.25;
-            elseif strcmp(operation, 'max') == 1 || strcmp(operation, 'stochastic') == 1
-                % SS = max(x1, ..., xN) where N = ratio*ratio
-                % Only the max element (the one at the index specified in
-                % "indices") will get propagated, the rest are zero
-                out = zeros(ratio*size(e));
-                out(indices) = e;
-                
-            elseif strcmp(operation, 'auto') == 1
-                % SS = X * weights + bias
-                % dEdX = dEdS * weights
-                % Assume weights are used column-wise, e.g.:
-                % [1 4
-                %  2 3] is equivalent to using [1 2 4 3]
-                %
-                out(1:2:size(e,1)*2,1:2:size(e,2)*2)=e * weights(1);
-                out(2:2:size(e,1)*2,1:2:size(e,2)*2)=e * weights(2);
-                out(1:2:size(e,1)*2,2:2:size(e,2)*2)=e * weights(3);
-                out(2:2:size(e,1)*2,2:2:size(e,2)*2)=e * weights(4);
-                
+        end
+        out = out ./ (ratio*ratio);
+        
+    elseif strcmp(operation, 'max') == 1 || strcmp(operation, 'stochastic') == 1
+        % SS = max(x1, ..., xN) where N = ratio*ratio
+        % Only the max element (the one at the index specified in
+        % "indices") will get propagated, the rest are zero
+        out = zeros(ratio*size(e));
+        out(indices) = e;
+        
+    elseif strcmp(operation, 'auto') == 1
+        % SS = X * weights + bias
+        % dEdX = dEdS * weights
+        weights = reshape(weights, ratio, ratio);
+        out = zeros(ratio*size(e));
+        for k=1:ratio
+            for l=1:ratio
+                out(1+(k-1):ratio:size(e,1)*ratio,1+(l-1):ratio:size(e,2)*ratio) = e * weights(k,l);
             end
-        case 1
-            out = e;
-        otherwise
-            disp('Unsupported ratio');
+        end
     end
+end
 
    
 end

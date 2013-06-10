@@ -116,8 +116,17 @@ for k=2:(cnet.numLayers-cnet.numFLayers)
             
             % Initialize OLayer parameters
             cnet.OLayer{k}.numFMaps = prevLayer.numFMaps;
-            cnet.OLayer{k}.FMapWidth = (fmw-r+1)*r;
-            cnet.OLayer{k}.FMapHeight = (fmh-r+1)*r;
+            
+            % Variable size of FMaps for OLayer depending on the type of
+            % ordering function (and how much data we keep)
+            if strcmp(cnet.OLayer{k}.SortFunc,'descend') == 1 || strcmp(cnet.OLayer{k}.SortFunc,'ascend') == 1
+                sizeBlock = [r, r];
+            elseif strcmp(cnet.OLayer{k}.SortFunc, 'percentile') == 1
+                sizeBlock = [length(cnet.OLayer{k}.SortPerc), 1];
+            end
+            
+            cnet.OLayer{k}.FMapWidth = (fmw-r+1)*sizeBlock(2);
+            cnet.OLayer{k}.FMapHeight = (fmh-r+1)*sizeBlock(1);
             
             for l=1:cnet.OLayer{k}.numFMaps
                 %Initialize all weights as 1 and biases as 0

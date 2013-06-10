@@ -105,10 +105,10 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
     %Biases 10 (10*1 = 10)
     
     % Display the important parameters
-    fprintf('Convnet convolution layer transfer function: %s\n', sinet.CLayer{2}.TransfFunc);
-    fprintf('Convnet pooling layer transfer function: %s\n', sinet.SLayer{4}.TransfFunc);
-    fprintf('Convnet pooling layer subsampling function: %s\n', sinet.SLayer{4}.SFunc);
-    fprintf('Convnet fully connected layer transfer function: %s\n', sinet.FLayer{6}.TransfFunc);
+    fprintf('Convnet convolution layer transfer function: %s\n', sinet.CTransfFunc);
+    fprintf('Convnet pooling layer transfer function: %s\n', sinet.STransfFunc);
+    fprintf('Convnet pooling layer subsampling function: %s\n', sinet.SFunc);
+    fprintf('Convnet fully connected layer transfer function: %s\n', sinet.FTransfFunc);
     fprintf('\n');
     
 else % standard alternating C-S architecture

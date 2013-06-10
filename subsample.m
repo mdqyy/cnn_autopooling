@@ -102,7 +102,7 @@
             indices = reshape( linind(ix_lin), size(in,1)/ratio, size(in,2)/ratio );
 
         elseif strcmp(operation, 'auto') == 1
-
+            
             temp = nan(ratio*ratio, size(in,1)/ratio * size(in,2)/ratio);
             for k=1:ratio
                 for m=1:ratio
