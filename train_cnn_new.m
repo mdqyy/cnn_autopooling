@@ -26,10 +26,10 @@
 
 clear;
 clc;
-clear classes;
+%clear classes;
 
 %Load the digits into workspace
-[I,labels,I_test,labels_test] = readMNIST(-1); 
+[I,labels,I_test,labels_test] = readMNIST(5); 
 padding = 4;
 
 %% Architecture
@@ -250,10 +250,10 @@ sinet.teta_dec = 1;
 %labtst = labels_test;
 
 % Try one forward pass first
-[mcr,sinet]=calcMCR(sinet,Ip, labels, 1:length(labels));
-fprintf('Training MCR after 1 forward pass: %.4f\n', mcr);
-[mcr_test,~]=calcMCR(sinet,I_testp, labels_test, 1:length(labels_test));
-fprintf('Test MCR after 1 forward pass: %.4f\n', mcr_test);
+%[mcr,mse,sinet]=calcMCR(sinet,Ip, labels, 1:length(labels));
+%fprintf('Training MCR after 1 forward pass: %.4f\n', mcr);
+%[mcr_test,mse_test,~]=calcMCR(sinet,I_testp, labels_test, 1:length(labels_test));
+%fprintf('Test MCR after 1 forward pass: %.4f\n', mcr_test);
 
 %Actually training
 sinet = train(sinet,Ip,labtrn,I_testp,labtst);

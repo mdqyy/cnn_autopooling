@@ -61,8 +61,8 @@ SetText(h_MCRedit,mcr(end));
 % By default, Hessian mode is 0
 if(cnet.HcalcMode == 1)
     for i=1:cnet.HrecalcSamplesNum
-        %Setting the right output to 1, others to -1
-        d = -ones(1,10);
+        %Setting the right output to 1, others to 0
+        d = zeros(1,10);
         d(labels(i)+1) = 1;
         %Simulating
         [out, cnet] = sim(cnet,Ip{i});    
@@ -81,20 +81,22 @@ end
 
 %Initialize performance variables
 mcr = nan(cnet.epochs,1);
+mcr_test = nan(cnet.epochs,1);
 perf_plot = nan(cnet.epochs,1);
+perf_plot_test = nan(cnet.epochs,1);
 
 %For all epochs
 for t=1:cnet.epochs
     SetText(h_EpEdit,t);
     SetTextHP(h_TetaEdit,cnet.teta);
-    fprintf('Epoch: %d, Learning rate: %.6f\n', t, cnet.teta);
+    %fprintf('Epoch: %d, Learning rate: %.6f\n', t, cnet.teta);
     
-    perf = nan(numPats,1);
+    perf = 0.0;
     
     %For all patterns
     for n=1:numPats
-        % d=target output. Set the correct target to 1, others to -1.
-        d = -ones(1,10);
+        % d=target output. Set the correct target to 1, others to 0.
+        d = zeros(1,10);
         d(labels(n)+1) = 1;
         %Simulating
         [out, cnet] = sim(cnet,Ip{n});    
@@ -117,8 +119,8 @@ for t=1:cnet.epochs
                     stInd = n;
                 end
                 for i=stInd:stInd+cnet.HrecalcSamplesNum
-                    %Setting the right output to 1, others to -1
-                    d = -ones(1,10);
+                    %Setting the right output to 1, others to 0
+                    d = zeros(1,10);
                     d(labels(i)+1) = 1;
                     %Simulating
                     [out, cnet] = sim(cnet,Ip{i});    
@@ -143,7 +145,9 @@ for t=1:cnet.epochs
 %        tmp(1)=check_finit_dif(cnet,1,Ip{n},d,1);
 %===========DEBUG
 
-        perf(n) = mse(e); %Store the error
+        perf = perf + e*e'; %Add up squared error for each training example
+        %fprintf('Adding %.5f to MSE accumulator\n', e*e');
+        %disp([out',d',e']);
         
         if(cnet.HcalcMode == 2) %Gradient descent
             dW = cnet.teta*je;  %Teta is the learning rate
@@ -164,16 +168,22 @@ for t=1:cnet.epochs
         end
     end
     
-    %Plot performance after every epoch (pass through entire dataset)
-      %Plot misclassification rate
-      mcr(t) = calcMCR(cnet,I_testp, labels_test, 1:length(labels_test));
+    %Plot performance after every epoch (1 pass through entire dataset)
+      
+      %Plot training set misclassification rate
+      [mcr(t), mse_train, simNetTrain] = calcMCR(cnet,Ip, labels, 1:length(labels));
+      [mcr_test(t), perf_plot_test(t), simNetTest] = calcMCR(cnet,I_testp, labels_test, 1:length(labels_test));
       plot(h_MCRaxes,mcr);
-      SetText(h_MCRedit,mcr(end));
-      %Plot the mean of the root of the MSE's for all training examples
-      perf_plot(t) = mean(sqrt(perf));
+      SetText(h_MCRedit,mcr(t));
+      
+      %Plot the training set MSE
+      perf_plot(t) = perf / numPats;
       plot(h_RMSEaxes,perf_plot);
-      SetText(h_RMSEedit,perf_plot(end));
-
+      SetText(h_RMSEedit,perf_plot(t));
+      
+      % Compute test set MSE and test set MCR
+      fprintf('Epoch %d, Train MCR: %.2f, Train MSE: %.5f, Test MCR: %.2f, Test MSE: %.5f\n', ...
+                t, mcr(t),perf_plot(t),mcr_test(t),perf_plot_test(t));
     %Update learning rate
     cnet.teta = cnet.teta*cnet.teta_dec;
 end
