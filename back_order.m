@@ -29,7 +29,9 @@
          if isempty(correspondingVal)
              out(k) = 0;
          else
-            out(k) = correspondingVal(1);
+             % Sum over all units in the OLayer that depend on this unit in
+             % the CLayer (weights are 1 because the operation is ordering)
+            out(k) = sum(correspondingVal);
          end
      end
  

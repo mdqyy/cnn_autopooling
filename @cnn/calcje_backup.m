@@ -25,29 +25,26 @@ function [cnet,je] = calcje(cnet,e)
 %Last layer
 k = cnet.numLayers;
 %Calculate the performance function derivative
-cnet.FLayer{k}.dEdX{1} = (feval(cnet.Perf, 'dy' , e, cnet.FLayer{k}.Y, cnet.FLayer{k}.X, cnet.Perf))';
+cnet.FLayer{k}.dEdX{1} = feval(cnet.Perf, 'dy' , e, cnet.FLayer{k}.Y, cnet.FLayer{k}.X, cnet.Perf);
 %Calculating the transfer function derivative
-cnet.FLayer{k}.dXdY{1} = (feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.FLayer{k}.Y,cnet.FLayer{k}.X))'; 
+cnet.FLayer{k}.dXdY{1} = feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.FLayer{k}.Y,cnet.FLayer{k}.X); 
 %Calculating dE/dY
 cnet.FLayer{k}.dEdY{1} = cnet.FLayer{k}.dXdY{1}.*cnet.FLayer{cnet.numLayers}.dEdX{1};
 %Check if the previous layer is convolutional or fully-connected
 if(cnet.numFLayers~=1) % previous layer is fully-connected
-    outp = cnet.FLayer{cnet.numLayers-1}.X(:);
+    outp = cnet.FLayer{cnet.numLayers-1}.X;
 else % previous layer is not fully-connected
     if cnet.boolSorting == 1
-        outp = cell2mat(cnet.SLayer{cnet.numLayers-1}.XS);
-        outp = outp(:);
+        outp = cnet.SLayer{cnet.numLayers-1}.XS; 
     else
-        outp = cell2mat(cnet.CLayer{cnet.numLayers-1}.XC);        
+        outp = cnet.CLayer{cnet.numLayers-1}.XC;        
     end
 end
-
 %Calculate gradients for weights and biases
 % "kron" = Kroneker tensor product = every possible pair of products 
-% (returned as a row vector). outp is N x 1 where N is the size of the
-% previous layer, and dEdY{1} is M x 1 where M is the size of the FLayer
-cnet.FLayer{k}.dEdW{1} = kron(cnet.FLayer{k}.dEdY{1}',outp')';
-cnet.FLayer{k}.dEdB{1} = cnet.FLayer{k}.dEdY{1}; %biases are 1; column vector
+% (returned as a row vector)
+cnet.FLayer{k}.dEdW{1} = kron(cnet.FLayer{k}.dEdY{1},outp)';
+cnet.FLayer{k}.dEdB{1} = cnet.FLayer{k}.dEdY{1}'; %biases are 1; column vector
 
 %Reshape data into single-column vector
 je=cnet.FLayer{k}.dEdW{1};
@@ -56,7 +53,7 @@ je=[je;cnet.FLayer{k}.dEdB{1}];
 if (cnet.numFLayers>1) %If there are more than 1 fully-connected layers
     for k=cnet.numLayers-1:cnet.numLayers-cnet.numFLayers+1
         %Backpropagate error to outputs of this layer
-        cnet.FLayer{k}.dEdX{1} = cnet.FLayer{k+1}.W*cnet.FLayer{k+1}.dEdY{1};
+        cnet.FLayer{k}.dEdX{1} = cnet.FLayer{k+1}.W*cnet.FLayer{k+1}.dEdY{1}';
         %Calculating the transfer function derivative
         cnet.FLayer{k}.dXdY{1} = feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.FLayer{k}.Y,cnet.FLayer{k}.X)';
         %Backpropagate error to transfer function inputs

@@ -29,19 +29,20 @@ clc;
 %clear classes;
 
 %Load the digits into workspace
-[I,labels,I_test,labels_test] = readMNIST(5); 
-padding = 4;
+[I,labels,I_test,labels_test] = readMNIST(-1);
+padding = 0;
 
 %% Architecture
 
+%Whether to use ordered pooling layers (1) or not (0)
 boolSorting = 1;
 
 if boolSorting == 1 % the new alternating C-O-S layer architecture
 
     %Total number of layers
-    numLayers = 6;  
+    numLayers = 5;  
     %Number of fully-connected layers
-    numFLayers = 2;
+    numFLayers = 1;
     %Number of input images (simultaneously processed). Need for future
     %releases, now only 1 is possible
     numInputs = 1; 
@@ -51,11 +52,9 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
     InputHeight = size(I{1},1)+padding;
     %Number of outputs
     numOutputs = 10;
-    %Whether to use ordered pooling layers (1) or not (0)
-    boolSorting = 1;
     %Create an empty convolutional neural network with defined structure
     sinet = cnn(numLayers,numFLayers,numInputs,InputWidth,InputHeight,numOutputs,boolSorting);
-
+    
     %Now define the network parameters
 
 
@@ -72,8 +71,8 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
 
     %CLayer{2} - Second layer - 1 convolution kernels of 28x28 size with 5x5 receptive field
     sinet.CLayer{2}.numKernels = 1;
-    sinet.CLayer{2}.KernWidth = 5;
-    sinet.CLayer{2}.KernHeight = 5;
+    sinet.CLayer{2}.KernWidth = 2;
+    sinet.CLayer{2}.KernHeight = 2;
     %NB: weights are shared among all units in a kernel (feature map)
     %Weights 25 (each unit connected to 25 inputs => 25*1 = 25)
     %Biases 1 (each unit is also connected to a bias => 1*1 = 1)
@@ -95,12 +94,12 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
     %Biases 1 (1*1 = 1)
 
     %FLayer{5} - Fifth layer - fully connected, 120 neurons
-    sinet.FLayer{5}.numNeurons = 120;
+    sinet.FLayer{5}.numNeurons = numOutputs;
     %Weights 87480 (120x27x27 = 87480)
     %Biases 120 (120x1 = 120)
 
     %FLayer{6} - Sixth layer - fully connected, 10 output neurons
-    sinet.FLayer{6}.numNeurons = numOutputs;
+    %sinet.FLayer{6}.numNeurons = numOutputs;
     %Weights 1200 (10*120 = 1200)
     %Biases 10 (10*1 = 10)
     
@@ -221,7 +220,7 @@ sinet = init(sinet);
 %%
 %Now the final preparations
 %Number of epochs
-sinet.epochs = 5;
+sinet.epochs = 10;
 %Mu coefficient for stochastic Levenberg-Markquardt
 sinet.mu = 0.001;
 %Training coefficient (learning rate)
@@ -242,12 +241,15 @@ sinet.teta_dec = 1;
 %Images preprocessing. Resulting images have 0 mean and 1 standard
 %deviation, and are padded by 4 pixels on all sides => 32x32
 %Go inside the preproc_data for details.
-[Ip, labtrn] = preproc_data(I,length(I),labels,0,padding);
-[I_testp, labtst] = preproc_data(I_test,length(I_test),labels_test,0,padding);
-%Ip = I;
-%I_testp = I_test;
-%labtrn = labels;
-%labtst = labels_test;
+%[Ip, labtrn] = preproc_data(I,length(I),labels,0,padding);
+%[I_testp, labtst] = preproc_data(I_test,length(I_test),labels_test,0,padding);
+Ip = I;
+I_testp = I_test;
+labtrn = labels;
+labtst = labels_test;
+
+% Visualize the inputs (need N x M matrix)
+%visualize(cell2mat(arrayfun(@(x) [Ip{1,x}(:)], 1:size(Ip,2), 'un', 0)),'Training Set');
 
 % Try one forward pass first
 %[mcr,mse,sinet]=calcMCR(sinet,Ip, labels, 1:length(labels));

@@ -91,8 +91,14 @@ cnet.epochs = 280;   %Number of training epochs: 280 [1]
 cnet.goal = 0.00001; %Goal RMSE value
 cnet.teta = 0.01;    %Learning rate for gradient descent: 10^-2 [1]
 cnet.teta_dec = 0.3; %Teta per epoch decrease rate
+cnet.checkgrad = 1;  % 1 = check gradients numerically for accuracy on 
+                     %every run, 0 = don't check
+%cnet.checkgrad_num = [1,110,111,160,166,170]; 
+cnet.checkgrad_num = [1,40,41,50,56,60];
+                      % number of gradients to check numerically for 
+                      % correctness
 
-cnet.SFunc = 'auto'; % { 'average', 'max', 'stochastic', 'auto' }
+cnet.SFunc = 'average'; % { 'average', 'max', 'stochastic', 'auto' }
 cnet.SRate = 2; % Default subsampling rate
 cnet.CTransfFunc = 'sigmoid'; % Default convolutional layer activation function
 cnet.STransfFunc = 'sigmoid'; % Default pooling layer activation function

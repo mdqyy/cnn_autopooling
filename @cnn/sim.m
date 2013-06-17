@@ -86,13 +86,10 @@ for k=2:(cnet.numLayers-cnet.numFLayers) %(First layer is dummy, skip it)
                     %Convolute and accumulate
                     YC{l} = YC{l}+fastFilter2(cnet.CLayer{k}.WC{l},cnet.SLayer{k-1}.XS{m},'valid')+cnet.CLayer{k}.BC{l};            
                 end
-                % The transfer function for C-Layers is linear
-                cnet.CLayer{k}.XC{l} = YC{l};
+                % Apply the transfer function for the C-Layer
+                cnet.CLayer{k}.XC{l} = feval(cnet.CLayer{k}.TransfFunc,YC{l});
             end
          cnet.CLayer{k}.YC = YC;
-         if size(cnet.CLayer{k}.XC,1) < size(cnet.CLayer{k}.XC,2) 
-            cnet.CLayer{k}.XC = cnet.CLayer{k}.XC'; % need the outgoing in column form
-         end
          
     elseif index_oLayer == 1
     %O-layer

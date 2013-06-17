@@ -17,7 +17,7 @@ function sz = cnn_size(cnet)
 sz = 0;
 %Loop through the fully-connected layers (the loop is inclusive)
 for k=cnet.numLayers:-1:(cnet.numLayers-cnet.numFLayers+1)
-    fprintf('k=%d, size=%d\n', k, numel(cnet.FLayer{k}.W)+numel(cnet.FLayer{k}.B));
+    %fprintf('k=%d, size=%d\n', k, numel(cnet.FLayer{k}.W)+numel(cnet.FLayer{k}.B));
     sz = sz + numel(cnet.FLayer{k}.W)+numel(cnet.FLayer{k}.B);
 end
 
@@ -37,15 +37,15 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %first layer is dummy
     
     if index_sLayer == 1
         %Subsampling layer
-        fprintf('k=%d, size=%d\n', k, numel(cnet.SLayer{k}.WS)*numel(cnet.SLayer{k}.WS{1})+numel(cnet.SLayer{k}.BS)*numel(cnet.SLayer{k}.BS{1}));
+        %fprintf('k=%d, size=%d\n', k, numel(cnet.SLayer{k}.WS)*numel(cnet.SLayer{k}.WS{1})+numel(cnet.SLayer{k}.BS)*numel(cnet.SLayer{k}.BS{1}));
         sz = sz + numel(cnet.SLayer{k}.WS)*numel(cnet.SLayer{k}.WS{1})+numel(cnet.SLayer{k}.BS)*numel(cnet.SLayer{k}.BS{1});
     elseif index_cLayer == 1
         %Convolutional layer
-        fprintf('k=%d, size=%d\n', k, numel(cnet.CLayer{k}.WC)*numel(cnet.CLayer{k}.WC{1})+numel(cnet.CLayer{k}.BC)*numel(cnet.CLayer{k}.BC{1}));
+        %fprintf('k=%d, size=%d\n', k, numel(cnet.CLayer{k}.WC)*numel(cnet.CLayer{k}.WC{1})+numel(cnet.CLayer{k}.BC)*numel(cnet.CLayer{k}.BC{1}));
         sz = sz + numel(cnet.CLayer{k}.WC)*numel(cnet.CLayer{k}.WC{1})+numel(cnet.CLayer{k}.BC)*numel(cnet.CLayer{k}.BC{1});
     elseif index_oLayer == 1
         %Ordering layer - no trainable weights, only does reordering
-        fprintf('k=%d, size=%d\n', k, 0);
+        %fprintf('k=%d, size=%d\n', k, 0);
         %sz = sz + numel(cnet.OLayer{k}.WO)*numel(cnet.OLayer{k}.WO{1})+numel(cnet.OLayer{k}.BO)*numel(cnet.OLayer{k}.BO{1});
     end
 end

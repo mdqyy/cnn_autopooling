@@ -104,7 +104,23 @@ for t=1:cnet.epochs
         e = out-d;
         %Calculate Jacobian times error, or in other words calculate
         %gradient
-        [cnet,je] = calcje(cnet,e); 
+        [cnet,je] = calcje(cnet,e);
+        
+        if cnet.checkgrad == 1
+            %Check the gradients numerically
+            [diff,numgrad,grad] = checkgrad(cnet,net_size,Ip{n},d,1,length(cnet.checkgrad_num),cnet.checkgrad_num,je);
+            threshold = 10^-4;
+            failed_checkgrad = find(diff > threshold, 1);
+            if ~isempty(failed_checkgrad)
+                fprintf('FAILED checkgrad for the following weights:\n');
+                disp(cnet.checkgrad_num(failed_checkgrad));
+                fprintf('Approximated grad | Computed grad \n');
+                disp([numgrad(failed_checkgrad), grad(failed_checkgrad)]);
+            else
+                fprintf('PASSED checkgrad for all weights\n');
+            end
+        end
+        
         %Calculate Hessian diagonal approximation
         if(cnet.HcalcMode == 0)
             [cnet,hx] = calchx(cnet);         
@@ -139,7 +155,7 @@ for t=1:cnet.epochs
             end
         end
 
-
+        
         %The following is usefull for debugging. 
 %===========DEBUG
 %        tmp(1)=check_finit_dif(cnet,1,Ip{n},d,1);
@@ -171,22 +187,33 @@ for t=1:cnet.epochs
     %Plot performance after every epoch (1 pass through entire dataset)
       
       %Plot training set misclassification rate
-      [mcr(t), mse_train, simNetTrain] = calcMCR(cnet,Ip, labels, 1:length(labels));
-      [mcr_test(t), perf_plot_test(t), simNetTest] = calcMCR(cnet,I_testp, labels_test, 1:length(labels_test));
-      plot(h_MCRaxes,mcr);
+      [mcr(t), perf_plot(t), ~] = calcMCR(cnet,Ip, labels, 1:length(labels));
+      [mcr_test(t), perf_plot_test(t), ~] = calcMCR(cnet,I_testp, labels_test, 1:length(labels_test));
+      plot(h_MCRaxes,1:length(mcr),mcr,'b-',1:length(mcr_test),mcr_test,'r--');
       SetText(h_MCRedit,mcr(t));
       
-      %Plot the training set MSE
-      perf_plot(t) = perf / numPats;
-      plot(h_RMSEaxes,perf_plot);
+      %Plot the training set MSE (blue) and test set MSE (red)
+      %perf_plot(t) = perf / numPats;
+      plot(h_RMSEaxes,1:length(perf_plot),perf_plot,'b-',1:length(perf_plot_test),perf_plot_test,'r--');
       SetText(h_RMSEedit,perf_plot(t));
       
       % Compute test set MSE and test set MCR
       fprintf('Epoch %d, Train MCR: %.2f, Train MSE: %.5f, Test MCR: %.2f, Test MSE: %.5f\n', ...
                 t, mcr(t),perf_plot(t),mcr_test(t),perf_plot_test(t));
+            
+      % Plot what the weights of the hidden layers are learning
+      %weightMat = cnet.CLayer{2}.WC;
+      %visualize(weightMat,'Weights of CLayer{2}');
+            
     %Update learning rate
     cnet.teta = cnet.teta*cnet.teta_dec;
 end
+
+%Add legends to the plots
+legend(h_RMSEaxes,'Train','Test');
+legend(h_MCRaxes,'Train','Test');
+
+%Stop the running clock to see elapsed time
 toc
 
 %Sets Hessian progress

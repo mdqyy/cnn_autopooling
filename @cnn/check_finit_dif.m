@@ -1,5 +1,5 @@
-function difference = check_finit_dif(cnet,num,Ip,d,order) 
-%check_finit_dif calulate gradient or Hessian using finite differences
+function [num_grad, ind_grad] = check_finit_dif(cnet,num,Ip,d,order,numToCheck,ind) 
+%check_finit_dif calculate gradient or Hessian using finite differences
 %
 %  Syntax
 %  
@@ -8,38 +8,73 @@ function difference = check_finit_dif(cnet,num,Ip,d,order)
 %  Description
 %   Input:
 %    cnet - Convolutional neural network class object
-%    num - number of parameter (weight or bias) in single-column weight
-%    vector, which for gradient has to be calculated
-%    Ip - cell array of input images
-%    d - desired output
+%    num - number of parameters (weights and biases) in single-column weight
+%    vector (which have to be learned)
+%    Ip - K x K double, 1 input example
+%    d - desired output, 1 x N
 %    order - 1 means gradient, 2 - Hessian
+%    numToCheck - 1 x 1 int, the number of gradients to check (since
+%    checking all gradients in the network takes too long for deep nets)
+%    ind - 1 x N int, the indices of the gradients to be checked
+%    numerically (e.g., ind = [1] means check dEdW (wrt w1) for last layer)
 %    
 %   Output:
-%    difference - gradient for a given parameter calculated using finite
-%    difference
+%    num_grad - numToCheck x 1 double vector. Gradients for all parameters, 
+%    calculated using finite differences. If calcje works correctly, 
+%    the numerical gradients should be almost the same as the gradients 
+%    produced by calcje.
+%    ind_grad - numToCheck x 1 int vector. The indices of the gradients
+%    that were computed numerically (if numToCheck < num, the gradients 
+%    are randomly sampled to save time)
 %   
 %   Description:
 %    This function is mostly used for debugging, because calculating
 %    gradients such was is computationally expensive
+%
+% where N is the number of output classes (e.g., N=10 for digit recognition)
+% K is the size of one example (e.g., K=32 for MNIST images)
+% 
 
 %Epsilon determines the accuracy of this method
-epsilon = 10^-8;        
+epsilon = 10^-4;        
+if ~isnan(ind)
+    numToCheck = length(ind);
+end
+
 switch(order)
-    case 1
-        %Create an empty array
-        dW = sparse(zeros(20691,1));
-        %Set the given parameter to epsilon
-        dW(num) = epsilon;
-        %Apply this to cnet
-        cnet_minus_e = adapt_dw(cnet,dW);
-        cnet_plus_e = adapt_dw(cnet,-dW);
-        %Simulate it with different error values
-        e1 = sim(cnet_plus_e,Ip)-d;
-        e2 = sim(cnet_minus_e,Ip)-d;
-        %Calculate finite difference
-        dEdWi = (mse(e1)-mse(e2))/(2*epsilon);
-        difference = dEdWi;
-    case 2 % Not working proper yet
+    case 1 % Gradient
+        % Initialize the numerical gradient
+        num_grad = zeros(numToCheck,1);
+        perturb = zeros(num,1);
+        
+        % Too slow to compute ALL gradients numerically, so pick randomly
+        % which ones to check
+        %ind_grad = round( 1 + rand(numToCheck,1)*(num-1) );
+        ind_grad = ind;
+        
+        for p=1:numToCheck
+            
+            p_ind = ind_grad(p);
+            
+            % Set perturbation vector (only perturb 1 weight at a time)
+            perturb(p_ind) = epsilon;
+            
+            % Simulate the net with different error values
+            cnet_minus_e = adapt_dw(cnet,perturb);
+            cnet_plus_e = adapt_dw(cnet,-perturb);
+            
+            out1 = sim(cnet_plus_e,Ip);
+            out2 = sim(cnet_minus_e,Ip);
+            
+            e1 = out1-d;
+            e2 = out2-d;
+            
+            % Compute numerical gradient
+            num_grad(p) = (mse(e1)-mse(e2)) / (2*epsilon);
+            perturb(p_ind) = 0;
+        end
+        
+    case 2 % Hessian. Not working properly yet
 %         dW = sparse(zeros(20691,1));
 %         dW(num) = 2*epsilon;
 %         cnet_minus_e = adapt_dw(cnet,dW);
