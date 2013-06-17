@@ -31,12 +31,12 @@ function [diff,numgrad,grad] = checkgrad(cnet,num,Ip,d,order,numToCheck,ind,je)
 %    gradients, for each of the gradient indices that were requested to be
 %    checked (as provided by "ind"). A small value (e.g. < 10^-4) indicates
 %    that the computed gradient is correct.
-%
+%    
 %    numgrad - numToCheck x 1 double vector. Gradients for all parameters, 
 %    calculated using finite differences. If calcje works correctly, 
 %    the numerical gradients should be almost the same as the gradients 
 %    produced by calcje.
-%
+%    
 %    grad - numToCheck x 1 double vector. The computed gradients at the
 %    indices provided by "ind".
 % 

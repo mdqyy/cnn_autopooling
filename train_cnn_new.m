@@ -30,7 +30,7 @@ clc;
 
 %Load the digits into workspace
 [I,labels,I_test,labels_test] = readMNIST(-1);
-padding = 0;
+padding = 4;
 
 %% Architecture
 
@@ -71,8 +71,8 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
 
     %CLayer{2} - Second layer - 1 convolution kernels of 28x28 size with 5x5 receptive field
     sinet.CLayer{2}.numKernels = 1;
-    sinet.CLayer{2}.KernWidth = 2;
-    sinet.CLayer{2}.KernHeight = 2;
+    sinet.CLayer{2}.KernWidth = 5;
+    sinet.CLayer{2}.KernHeight = 5;
     %NB: weights are shared among all units in a kernel (feature map)
     %Weights 25 (each unit connected to 25 inputs => 25*1 = 25)
     %Biases 1 (each unit is also connected to a bias => 1*1 = 1)
@@ -241,12 +241,12 @@ sinet.teta_dec = 1;
 %Images preprocessing. Resulting images have 0 mean and 1 standard
 %deviation, and are padded by 4 pixels on all sides => 32x32
 %Go inside the preproc_data for details.
-%[Ip, labtrn] = preproc_data(I,length(I),labels,0,padding);
-%[I_testp, labtst] = preproc_data(I_test,length(I_test),labels_test,0,padding);
-Ip = I;
-I_testp = I_test;
-labtrn = labels;
-labtst = labels_test;
+[Ip, labtrn] = preproc_data(I,length(I),labels,0,padding);
+[I_testp, labtst] = preproc_data(I_test,length(I_test),labels_test,0,padding);
+%Ip = I;
+%I_testp = I_test;
+%labtrn = labels;
+%labtst = labels_test;
 
 % Visualize the inputs (need N x M matrix)
 %visualize(cell2mat(arrayfun(@(x) [Ip{1,x}(:)], 1:size(Ip,2), 'un', 0)),'Training Set');

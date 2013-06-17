@@ -98,7 +98,7 @@ cnet.checkgrad_num = [1,40,41,50,56,60];
                       % number of gradients to check numerically for 
                       % correctness
 
-cnet.SFunc = 'average'; % { 'average', 'max', 'stochastic', 'auto' }
+cnet.SFunc = 'max'; % { 'average', 'max', 'stochastic', 'auto' }
 cnet.SRate = 2; % Default subsampling rate
 cnet.CTransfFunc = 'sigmoid'; % Default convolutional layer activation function
 cnet.STransfFunc = 'sigmoid'; % Default pooling layer activation function
