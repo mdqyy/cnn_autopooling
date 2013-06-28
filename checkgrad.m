@@ -8,7 +8,7 @@ function [diff,numgrad,grad] = checkgrad(cnet,num,Ip,d,order,numToCheck,ind,je)
 %
 %  Syntax
 %  
-%    [diff,numgrad,grad] = checkgrad(cnet,num,Ip,d,order,numToCheck,ind) 
+%    [diff,numgrad,grad] = checkgrad(cnet,num,Ip,d,order,numToCheck,ind,je) 
 %    
 %  Description
 %   Input:
@@ -16,8 +16,8 @@ function [diff,numgrad,grad] = checkgrad(cnet,num,Ip,d,order,numToCheck,ind,je)
 %    simulated for the provided datapoint
 %    num - number of parameters (weights and biases) in single-column weight
 %    vector (which have to be learned), i.e. the size of the CNN
-%    Ip - K x K double matrix, 1 input example
-%    d - desired output, 1 x N double vector
+%    Ip - 1 x N cell array of M x M double matrices - the input examples
+%    d - desired output, N x 1 double vector (one label for each example)
 %    order - 1 means gradient, 2 - Hessian
 %    numToCheck - 1 x 1 int, the number of gradients to check (since
 %    checking all gradients in the network takes too long for deep nets)
@@ -40,9 +40,34 @@ function [diff,numgrad,grad] = checkgrad(cnet,num,Ip,d,order,numToCheck,ind,je)
 %    grad - numToCheck x 1 double vector. The computed gradients at the
 %    indices provided by "ind".
 % 
+% where N is the number of examples
+% M is the side length of one example (assuming square images)
+% K is the number of output classes
 
 [numgrad,~] = check_finit_dif(cnet,num,Ip,d,order,numToCheck,ind);
 grad = je(ind);
-diff = arrayfun(@(ix) norm(numgrad(ix)-grad(ix))/norm(numgrad(ix)+grad(ix)), 1:length(numgrad));
+diff = arrayfun(@(ix) compareGrads(numgrad(ix), grad(ix)), 1:length(numgrad));
+
+end
+
+function [diff] = compareGrads(ng, g)
+    
+    % To handle numerical precision issues, first check if the numerical 
+    % approximation is zero (in which case MATLAB failed to compute a 
+    % difference in MSE for the two perturbed weights) AND if the computed
+    % gradient is sufficiently close to zero as well -> in this case, the
+    % two gradients are sufficiently equal. Otherwise, use the standard
+    % norm comparison.
+
+    %Tolerance for determining if two floating-point numbers are equal
+%     tol = 10^-8;
+%     
+%     if abs(ng-0) <= tol && abs(g-0) <= tol
+%         diff = tol;
+%     else
+%         diff = norm(ng-g)/norm(ng+g);
+%     end
+    
+    diff = norm(ng-g)/norm(ng+g);
 
 end

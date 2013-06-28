@@ -16,6 +16,9 @@ function cnet = init(cnet)
 %
 %(c) Sirotenko Mikhail, 2009
 
+% Use same seed every time
+rng default;
+
 %First is a dummy layer by default. All its weights are 1, all biases are 0. 
 r = cnet.SLayer{1}.SRate;
 cnet.SLayer{1}.WS{1} = ones(floor(cnet.InputHeight/r),floor(cnet.InputWidth/r));

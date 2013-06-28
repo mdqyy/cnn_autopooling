@@ -1,5 +1,7 @@
-% plotDigits :         plots sqrt(M) x sqrt(M) pixel images of 
+% visualize  :         plots sqrt(M) x sqrt(M) pixel images of 
 %                      handwritten digits
+%
+% INPUTS
 % inputData  :         a 1 x N cell array, where each element is an 
 %                      sqrt(M) x sqrt(M) image
 % plotTitle  :         string, specifying the title for the plot

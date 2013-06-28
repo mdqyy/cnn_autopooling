@@ -23,8 +23,8 @@ function [I,labels,I_test,labels_test] = readMNIST(num)
 
 %Check if we have MNIST dataset 
 
-if num == -1 % read the minimal example (for debugging purposes)
-    load minimal.mat;
+if nargin > 0 && num == -1 % read the minimal example (for debugging purposes)
+    load minimal_edge.mat;
     
 else % read from the MNIST dataset, a specified number of examples
 

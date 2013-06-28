@@ -10,10 +10,11 @@ function [cnet,hx] = calchx(cnet)
 %    cnet - Convolutional neural network class object
 %   Output:
 %    cnet - trained convolutional neural network
-%    perf_plot - performance data
+%    hx - a column vector of second derivatives wrt net parameters, d2Ed2W,
+%    N x 1 where N is the net size
 %
 %   IMPORTANT! It is assumed that all calcgx was called before this, so the
-%   first derrivatives (dEdW, dEdX, dEdY) of each layer contains the actual data
+%   first derivatives (dEdW, dEdX, dEdY) of each layer contains the actual data
 %
 %(c) Sirotenko Mikhail, 2009
 
@@ -21,7 +22,7 @@ function [cnet,hx] = calchx(cnet)
 %========== Process all fully-connected layers first
 
 k = cnet.numLayers;
-%Determine wich is the previous layer
+%Determine which is the previous layer; outp is 1 x N
 if(cnet.numFLayers~=1)
     outp = cnet.FLayer{cnet.numLayers-1}.X;
 else
@@ -31,7 +32,7 @@ end
 %Backpropogating Hessian diagonal approximation
 %Second derrivative of MSE is 1
 cnet.FLayer{k}.d2Ed2X{1} = 1;
-cnet.FLayer{k}.d2Ed2Y{1} = cnet.FLayer{k}.d2Ed2X{1}.*(cnet.FLayer{k}.dXdY{1}.^2);
+cnet.FLayer{k}.d2Ed2Y{1} = cnet.FLayer{k}.d2Ed2X{1}.*(cnet.FLayer{k}.dXdY{1}'.^2);
 %Calculating Hessian diagonal approximation
 cnet.FLayer{k}.d2Ed2W{1} = kron(cnet.FLayer{k}.d2Ed2Y{1},outp.^2)';  
 cnet.FLayer{k}.d2Ed2B{1} = cnet.FLayer{k}.d2Ed2Y{1}';
@@ -45,15 +46,18 @@ if (cnet.numFLayers>1) %if there're more than one F-layer
         %Backpropogating Hessian diagonal approximation
         cnet.FLayer{k}.d2Ed2X{1} = (cnet.FLayer{k+1}.W.^2)*cnet.FLayer{k+1}.d2Ed2Y{1}';
         cnet.FLayer{k}.d2Ed2Y{1} = cnet.FLayer{k}.d2Ed2X{1}.*((cnet.FLayer{k}.dXdY{1}).^2);
-        %Determine wich is the previous layer
+        
+        %Determine which is the previous layer
         if(cnet.numLayers-cnet.numFLayers+1==k)
              outp = cell2mat(cnet.CLayer{k-1}.XC);                
         else
              outp = cnet.FLayer{k-1}.X;
         end
+        outp = outp(:); % N x 1
+        
         %Calculating Hessian diagonal approximation
         cnet.FLayer{k}.d2Ed2W{1} = kron(cnet.FLayer{k}.d2Ed2Y{1},outp.^2);  
-        cnet.FLayer{k}.d2Ed2B{1} = cnet.FLayer{k}.d2Ed2Y{1};    
+        cnet.FLayer{k}.d2Ed2B{1} = cnet.FLayer{k}.d2Ed2Y{1}; 
         %Reshape data into single-column vector
         hx=[hx;cnet.FLayer{k}.d2Ed2W{1}];
         hx=[hx;cnet.FLayer{k}.d2Ed2B{1}];
@@ -63,7 +67,7 @@ end
 
 k = cnet.numLayers-cnet.numFLayers;
 
-%Backpropogating Hessian diagonal approximation
+%Backpropagating Hessian diagonal approximation
 d2Ed2X = ((cnet.FLayer{k+1}.W).^2)*cnet.FLayer{k+1}.d2Ed2Y{1};
 %Converting to cell array
 cnet.CLayer{k}.d2Ed2X = num2cell(d2Ed2X);
@@ -106,7 +110,7 @@ for k=(cnet.numLayers-cnet.numFLayers):-1:2 %first layer is dummy
                 %Calculating Hessian diagonal approximation
                 d2Ed2W{l} = d2Ed2W{l}+...
                        back_conv2(cnet.SLayer{k-1}.XS{m}.^2,cnet.CLayer{k}.d2Ed2Y{l},cnet.CLayer{k}.WC{l},'gx');  
-
+                
                 d2Ed2B{l} = d2Ed2B{l}+sum(sum(cnet.CLayer{k}.d2Ed2Y{l}));  
                    
                 %Backpropogating Hessian diagonal approximation

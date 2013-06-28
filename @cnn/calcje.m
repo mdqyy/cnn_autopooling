@@ -1,4 +1,4 @@
-function [cnet,je] = calcje(cnet,e)
+function [cnet,je] = calcje(cnet,d)
 %CALCJE Calculation of gradient via backpropagation 
 %
 %  Syntax
@@ -8,8 +8,7 @@ function [cnet,je] = calcje(cnet,e)
 %  Description
 %   Input:
 %    cnet - Convolutional neural network class object
-%    e - 1 x N vector of errors (difference between network output and 
-%        target class) where N is the number of outputs (classes)
+%    d - 1 x N vector of targets where N is the number of outputs (classes)
 %   Output:
 %    cnet - convolutional neural network class object with computed
 %    gradients (stored in the layers' dEdW, dEdB, dEdX, dEdY variables)
@@ -25,7 +24,8 @@ function [cnet,je] = calcje(cnet,e)
 %Last layer
 k = cnet.numLayers;
 %Calculate the performance function derivative
-cnet.FLayer{k}.dEdX{1} = (feval(cnet.Perf, 'dy' , e, cnet.FLayer{k}.Y, cnet.FLayer{k}.X, cnet.Perf))';
+e = cnet.FLayer{k}.X - d; % difference between network output and target class 
+cnet.FLayer{k}.dEdX{1} = (feval(cnet.Perf, 'dy' , cnet.FLayer{k}.X, d))';
 %Calculating the transfer function derivative
 cnet.FLayer{k}.dXdY{1} = (feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.FLayer{k}.Y,cnet.FLayer{k}.X))'; 
 %Calculating dE/dY
@@ -38,7 +38,8 @@ else % previous layer is not fully-connected
         outp = cell2mat(cnet.SLayer{cnet.numLayers-1}.XS);
         outp = outp(:);
     else
-        outp = cell2mat(cnet.CLayer{cnet.numLayers-1}.XC);        
+        outp = cell2mat(cnet.CLayer{cnet.numLayers-1}.XC);  
+        outp = outp(:);
     end
 end
 
@@ -61,17 +62,19 @@ if (cnet.numFLayers>1) %If there are more than 1 fully-connected layers
         cnet.FLayer{k}.dXdY{1} = feval(cnet.FLayer{k}.TransfFunc,'dn',cnet.FLayer{k}.Y,cnet.FLayer{k}.X)';
         %Backpropagate error to transfer function inputs
         cnet.FLayer{k}.dEdY{1} = cnet.FLayer{k}.dXdY{1}.*cnet.FLayer{k}.dEdX{1};
+        
         %Check if the previous layer is fully-connected or not
         if(cnet.numLayers-cnet.numFLayers+1==k)
             if cnet.boolSorting == 1
-                outp = cell2mat(cnet.SLayer{k-1}.XS); %pooling 
-                outp = outp(:);
+                outp = cell2mat(cnet.SLayer{k-1}.XS); %pooling
             else
-                outp = cell2mat(cnet.CLayer{k-1}.XC); %convolutional, Nx1
+                outp = cell2mat(cnet.CLayer{k-1}.XC); %convolutional
             end
         else
              outp = cnet.FLayer{k-1}.X; %fully-connected
         end
+        outp = outp(:); % N x 1
+        
         %Calculate gradients for weights and biases        
         cnet.FLayer{k}.dEdW{1} = kron(cnet.FLayer{k}.dEdY{1},outp); 
         cnet.FLayer{k}.dEdB{1} = cnet.FLayer{k}.dEdY{1};     

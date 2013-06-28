@@ -91,16 +91,15 @@ cnet.epochs = 280;   %Number of training epochs: 280 [1]
 cnet.goal = 0.00001; %Goal RMSE value
 cnet.teta = 0.01;    %Learning rate for gradient descent: 10^-2 [1]
 cnet.teta_dec = 0.3; %Teta per epoch decrease rate
-cnet.checkgrad = 1;  % 1 = check gradients numerically for accuracy on 
+cnet.checkgrad = 0;  % 1 = check gradients numerically for accuracy on 
                      %every run, 0 = don't check
-%cnet.checkgrad_num = [1,110,111,160,166,170]; 
-cnet.checkgrad_num = [1,40,41,50,56,60];
-                      % number of gradients to check numerically for 
-                      % correctness
+cnet.checkgrad_threshold = 10^-6; % threshold for diff between numeric and actual gradient
+%cnet.checkgrad_num = [1,2,17343,34684,34685]; % number of gradients to check numerically for correctness
+cnet.checkgrad_num = [1,2,3500,7330,7331];
 
 cnet.SFunc = 'max'; % { 'average', 'max', 'stochastic', 'auto' }
 cnet.SRate = 2; % Default subsampling rate
-cnet.CTransfFunc = 'sigmoid'; % Default convolutional layer activation function
+cnet.CTransfFunc = 'purelin'; % Default convolutional layer activation function
 cnet.STransfFunc = 'sigmoid'; % Default pooling layer activation function
 cnet.OSortFunc = 'descend'; % Default order layer sorting function: { 'descend', 'ascend', 'percentile' }
 cnet.OSortPerc = nan; % either 1 x M vector of percentiles, or NaN
@@ -111,6 +110,7 @@ cnet.FTransfFunc = 'sigmoid'; % Default fully connected layer activation functio
 %0 - Hessian running estimate is calculated every iteration
 %1 - Hessian approximation is recalculated every cnet.Hrecomp iterations
 %2 - No Hessian calculations are made. Pure stochastic gradient descent
+%3 - Batch gradient descent
 cnet.HcalcMode = 2;
 cnet.Hrecalc = 1000; %Number of iterations to pass for Hessian recalculation
 cnet.HrecalcSamplesNum = 100; %Number of samples for Hessian recalculation

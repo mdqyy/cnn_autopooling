@@ -24,12 +24,14 @@
 %finite differences
 %URL: http://web.mit.edu/jvb/www/cv.html
 
-clear;
-clc;
+% Number of threads to be used
+maxThreads = maxNumCompThreads(2);
+
+clear all;
 %clear classes;
 
 %Load the digits into workspace
-[I,labels,I_test,labels_test] = readMNIST(-1);
+[I,labels,I_test,labels_test] = readMNIST();
 padding = 4;
 
 %% Architecture
@@ -57,7 +59,7 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
     
     %Now define the network parameters
 
-
+    
     %SLayer{1} - Due to implementation specifics layers are always in pairs. First must be
     %subsampling and last (before fully connected) is convolutional layer.
     %That's why here first layer is dummy.
@@ -86,7 +88,7 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
     %Weights 1 (each unit connected to 4 inputs mult by a single weight => 1*1=1)
     %Biases 1 (each unit also connected to a bias => 1*1=1)
 
-
+    
     %SLayer{4} - Fourth layer - 1 feature map of 27x27 suze connected to 2x2 regions
     %Subsampling rate
     sinet.SLayer{4}.SRate = 2;
@@ -110,14 +112,17 @@ if boolSorting == 1 % the new alternating C-O-S layer architecture
     fprintf('Convnet fully connected layer transfer function: %s\n', sinet.FTransfFunc);
     fprintf('\n');
     
+    %Initialize the network
+    sinet = init(sinet);
+    
 else % standard alternating C-S architecture
     %Define the structure according to [2]
     %Total number of layers
-    numLayers = 8; 
+    numLayers = 6; 
     %Number of subsampling layers
-    numSLayers = 3; 
+    numSLayers = 2; 
     %Number of convolutional layers
-    numCLayers = 3; 
+    numCLayers = 2; 
     %Number of fully-connected layers
     numFLayers = 2;
     %Number of input images (simultaneously processed). Need for future
@@ -131,7 +136,7 @@ else % standard alternating C-S architecture
     numOutputs = 10; 
     %Create an empty convolutional neural network with deined structure
     sinet = cnn(numLayers,numFLayers,numInputs,InputWidth,InputHeight,numOutputs,boolSorting);
-
+    
     %Now define the network parameters
 
 
@@ -144,10 +149,10 @@ else % standard alternating C-S architecture
     sinet.SLayer{1}.TransfFunc = 'purelin';
     %Weights 1
     %Biases 1
-
+    
 
     %Second layer - 6 convolution kernels with 5x5 size 
-    sinet.CLayer{2}.numKernels = 6;
+    sinet.CLayer{2}.numKernels = 1;
     sinet.CLayer{2}.KernWidth = 5;
     sinet.CLayer{2}.KernHeight = 5;
     %Weights 150
@@ -160,32 +165,32 @@ else % standard alternating C-S architecture
     %Biases 6
 
     %Forth layer - 16 kernels with 5x5 size 
-    sinet.CLayer{4}.numKernels = 16;
-    sinet.CLayer{4}.KernWidth = 5;
-    sinet.CLayer{4}.KernHeight = 5;
+    sinet.CLayer{4}.numKernels = 120;
+    sinet.CLayer{4}.KernWidth = 14;
+    sinet.CLayer{4}.KernHeight = 14;
     %Weights 150
     %Biases 6
 
     %Fifth layer
     %Subsampling rate
-    sinet.SLayer{5}.SRate = 2;
+    %sinet.SLayer{5}.SRate = 2;
     %Weights 6
     %Biases 6
 
     %Sixth layer - outputs 120 feature maps 1x1 size
-    sinet.CLayer{6}.numKernels = 120;
-    sinet.CLayer{6}.KernWidth = 5;
-    sinet.CLayer{6}.KernHeight = 5;
+    %sinet.CLayer{6}.numKernels = 120;
+    %sinet.CLayer{6}.KernWidth = 5;
+    %sinet.CLayer{6}.KernHeight = 5;
     %Weights 3000
     %Смещений 120
 
     %Seventh layer - fully connected, 84 neurons
-    sinet.FLayer{7}.numNeurons = 84;
+    sinet.FLayer{5}.numNeurons = 84;
     %Weights 10080
     %Biases 84
 
     %Eight layer - fully connected, 10 output neurons
-    sinet.FLayer{8}.numNeurons = 10;
+    sinet.FLayer{6}.numNeurons = numOutputs;
     %Weights 840
     %Biases 10
 
@@ -194,14 +199,14 @@ else % standard alternating C-S architecture
 
     %According to [2] the generalisation is better if there's unsimmetry in
     %layers connections. Yann LeCun uses this kind of connection map:
-    sinet.CLayer{4}.ConMap = ...
-    [1 0 0 0 1 1 1 0 0 1 1 1 1 0 1 1;
-     1 1 0 0 0 1 1 1 0 0 1 1 1 1 0 1;
-     1 1 1 0 0 0 1 1 1 0 0 1 0 1 1 1;
-     0 1 1 1 0 0 1 1 1 1 0 0 1 0 1 1;
-     0 0 1 1 1 0 0 1 1 1 1 0 1 1 0 1; 
-     0 0 0 1 1 1 0 0 1 1 1 1 0 1 1 1; 
-    ]';
+    %sinet.CLayer{4}.ConMap = ...
+    %[1 0 0 0 1 1 1 0 0 1 1 1 1 0 1 1;
+    % 1 1 0 0 0 1 1 1 0 0 1 1 1 1 0 1;
+    % 1 1 1 0 0 0 1 1 1 0 0 1 0 1 1 1;
+    % 0 1 1 1 0 0 1 1 1 1 0 0 1 0 1 1;
+    % 0 0 1 1 1 0 0 1 1 1 1 0 1 1 0 1; 
+    % 0 0 0 1 1 1 0 0 1 1 1 1 0 1 1 1; 
+    %]';
     %but some papers proposes to randomly generate the connection map. So you
     %can try it:
     %sinet.CLayer{6}.ConMap = round(rand(size(sinet.CLayer{6}.ConMap))-0.1);
@@ -213,14 +218,11 @@ else % standard alternating C-S architecture
     %sinet.FLayer{8}.TransfFunc = 'radbas';
 end
 
-%Initialize the network
-sinet = init(sinet);
-
 
 %%
 %Now the final preparations
 %Number of epochs
-sinet.epochs = 10;
+sinet.epochs = 280;
 %Mu coefficient for stochastic Levenberg-Markquardt
 sinet.mu = 0.001;
 %Training coefficient (learning rate)
@@ -230,13 +232,14 @@ sinet.teta = 0.01;
 %0 - Hessian running estimate is calculated every iteration
 %1 - Hessian approximation is recalculated every cnet.Hrecomp iterations
 %2 - No Hessian calculations are made. Pure stochastic gradient descent.
-sinet.HcalcMode = 2;    
+%3 - Batch gradient descent
+sinet.HcalcMode = 3;    
 sinet.Hrecalc = 300; %Number of iterations to pass for Hessian recalculation
 sinet.HrecalcSamplesNum = 50; %Number of samples for Hessian recalculation
 
 %Teta decrease coefficient (learning rate multiplied by this decrement 
 % coefficient on every epoch)
-sinet.teta_dec = 1; 
+sinet.teta_dec = 0.4; 
 
 %Images preprocessing. Resulting images have 0 mean and 1 standard
 %deviation, and are padded by 4 pixels on all sides => 32x32
@@ -258,6 +261,6 @@ sinet.teta_dec = 1;
 %fprintf('Test MCR after 1 forward pass: %.4f\n', mcr_test);
 
 %Actually training
-sinet = train(sinet,Ip,labtrn,I_testp,labtst);
+[trainedNet, performance] = train(sinet,Ip,labtrn,I_testp,labtst);
 
 

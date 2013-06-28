@@ -49,12 +49,13 @@ for k=1:n
     end
     labnew(k) = labels(rand_num);
     
-    if padding > 0
-        [dim1, dim2] = size(id{rand_num});
-        randd{k} = zeros(dim1 + padding, dim2 + padding);
+    [dim1, dim2] = size(id{rand_num});
+    randd{k} = zeros(dim1 + padding, dim2 + padding);
+    if padding > 0    
         randd{k}(padding/2+1:dim1+padding/2,padding/2+1:dim2+padding/2)=double(id{rand_num});
     else
-        
+        % No padding - just maintain image
+        randd{k} = double(id{rand_num});
     end
     %pd{k} = reshape(mapstd(reshape(randd{k},1,[])),32,32);
     gain = 1./ std(randd{k}(:));
